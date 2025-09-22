@@ -6,6 +6,9 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	_ "github.com/lsherman98/yt-rss/pocketbase/migrations"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/items_hooks"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/podcast_hooks"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -17,6 +20,14 @@ func main() {
 
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
+	}
+
+	if err := items_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := podcast_hooks.Init(app); err != nil {
+		log.Fatal(err)
 	}
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
