@@ -17,4 +17,4 @@ rsync -avz -e ssh /Users/levisherman/Documents/code/projects/yt-rss/pocketbase/p
 # rsync -avz -e ssh /Users/levisherman/Documents/code/projects/yt-rss/pocketbase/.env root@162.243.70.98:/root/yt-rss/.env
 
 # # Restart pocketbase.service on remote server
-ssh root@162.243.70.98 'systemctl restart yt-rss.service'
+ssh root@162.243.70.98 'systemctl restart pb-rss.service'

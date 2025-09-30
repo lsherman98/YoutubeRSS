@@ -13,6 +13,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppPodcastsIndexRouteImport } from './routes/_app/podcasts/index'
+import { Route as AppPodcastsIdRouteImport } from './routes/_app/podcasts/$id'
 
 const SigninLazyRouteImport = createFileRoute('/signin')()
 
@@ -30,27 +32,49 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPodcastsIndexRoute = AppPodcastsIndexRouteImport.update({
+  id: '/podcasts/',
+  path: '/podcasts/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPodcastsIdRoute = AppPodcastsIdRouteImport.update({
+  id: '/podcasts/$id',
+  path: '/podcasts/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/signin': typeof SigninLazyRoute
   '/': typeof AppIndexRoute
+  '/podcasts/$id': typeof AppPodcastsIdRoute
+  '/podcasts': typeof AppPodcastsIndexRoute
 }
 export interface FileRoutesByTo {
   '/signin': typeof SigninLazyRoute
   '/': typeof AppIndexRoute
+  '/podcasts/$id': typeof AppPodcastsIdRoute
+  '/podcasts': typeof AppPodcastsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/signin': typeof SigninLazyRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/podcasts/$id': typeof AppPodcastsIdRoute
+  '/_app/podcasts/': typeof AppPodcastsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/signin' | '/'
+  fullPaths: '/signin' | '/' | '/podcasts/$id' | '/podcasts'
   fileRoutesByTo: FileRoutesByTo
-  to: '/signin' | '/'
-  id: '__root__' | '/_app' | '/signin' | '/_app/'
+  to: '/signin' | '/' | '/podcasts/$id' | '/podcasts'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/signin'
+    | '/_app/'
+    | '/_app/podcasts/$id'
+    | '/_app/podcasts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -81,15 +105,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/podcasts/': {
+      id: '/_app/podcasts/'
+      path: '/podcasts'
+      fullPath: '/podcasts'
+      preLoaderRoute: typeof AppPodcastsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/podcasts/$id': {
+      id: '/_app/podcasts/$id'
+      path: '/podcasts/$id'
+      fullPath: '/podcasts/$id'
+      preLoaderRoute: typeof AppPodcastsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppPodcastsIdRoute: typeof AppPodcastsIdRoute
+  AppPodcastsIndexRoute: typeof AppPodcastsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppPodcastsIdRoute: AppPodcastsIdRoute,
+  AppPodcastsIndexRoute: AppPodcastsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -12,6 +12,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/filesystem"
+	"github.com/pocketbase/pocketbase/tools/routine"
 	"github.com/wader/goutubedl"
 )
 
@@ -21,143 +22,145 @@ func Init(app *pocketbase.PocketBase) error {
 		user := e.Record.GetString("user")
 		podcastId := e.Record.GetString("podcast")
 
-		result, err := goutubedl.New(context.Background(), url, goutubedl.Options{})
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to initialize youtube-dl: " + err.Error())
-			return e.Next()
-		}
-
-		videoId := result.Info.ID
-		videoTitle := result.Info.Title
-		duration := result.Info.Duration
-		channel := result.Info.Channel
-		description := result.Info.Description
-
-		download, err := result.DownloadWithOptions(context.Background(), goutubedl.DownloadOptions{
-			AudioFormats:      "mp3",
-			DownloadAudioOnly: true,
-		})
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to download audio: " + err.Error())
-			return e.Next()
-		}
-		defer download.Close()
-
-		outputDir := "output"
-		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-			err = os.Mkdir(outputDir, 0755)
+		routine.FireAndForget(func() {
+			result, err := goutubedl.New(context.Background(), url, goutubedl.Options{})
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to create output directory: " + err.Error())
-				return e.Next()
+				e.App.Logger().Error("Items Hooks: failed to initialize youtube-dl: " + err.Error())
+				return 
 			}
-		}
 
-		outputPath := outputDir + "/" + videoId + ".mp3"
-		f, err := os.Create(outputPath)
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to create output file: " + err.Error())
-			return e.Next()
-		}
-		defer f.Close()
-		io.Copy(f, download)
+			videoId := result.Info.ID 
+			videoTitle := result.Info.Title
+			duration := result.Info.Duration
+			channel := result.Info.Channel
+			description := result.Info.Description
 
-		downloadsCollection, err := e.App.FindCollectionByNameOrId(collections.Downloads)
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to find downloads collection: " + err.Error())
-			return e.Next()
-		}
+			download, err := result.DownloadWithOptions(context.Background(), goutubedl.DownloadOptions{
+				AudioFormats:      "mp3",
+				DownloadAudioOnly: true,
+			})
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to download audio: " + err.Error())
+				return 
+			}
+			defer download.Close()
 
-		file, err := filesystem.NewFileFromPath(outputPath)
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to create file from path: " + err.Error())
-			return e.Next()
-		}
+			outputDir := "output"
+			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+				err = os.Mkdir(outputDir, 0755)
+				if err != nil {
+					e.App.Logger().Error("Items Hooks: failed to create output directory: " + err.Error())
+					return
+				}
+			}
 
-		downloadRecord := core.NewRecord(downloadsCollection)
-		downloadRecord.Set("title", videoTitle)
-		downloadRecord.Set("duration", duration)
-		downloadRecord.Set("channel", channel)
-		downloadRecord.Set("user", user)
-		downloadRecord.Set("file", file)
-		downloadRecord.Set("description", description)
-		downloadRecord.Set("podcast", podcastId)
-		downloadRecord.Set("item", e.Record.Id)
-		if err := e.App.Save(downloadRecord); err != nil {
-			e.App.Logger().Error("Items Hooks: failed to save new download record: " + err.Error())
-			return e.Next()
-		}
+			outputPath := outputDir + "/" + videoId + ".mp3"
+			f, err := os.Create(outputPath)
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to create output file: " + err.Error())
+				return 
+			}
+			defer f.Close()
+			io.Copy(f, download)
 
-		downloadRecord.Set("download_link", files.GetFileURL(downloadRecord.BaseFilesPath(), file.Name))
-		if err := e.App.Save(downloadRecord); err != nil {
-			e.App.Logger().Error("Items Hooks: failed to save new download record: " + err.Error())
-			return e.Next()
-		}
+			downloadsCollection, err := e.App.FindCollectionByNameOrId(collections.Downloads)
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to find downloads collection: " + err.Error())
+				return 
+			}
 
-		e.Record.Set("download", downloadRecord.Id)
-		if err := e.App.Save(e.Record); err != nil {
-			e.App.Logger().Error("Items Hooks: failed to save item record: " + err.Error())
-			return e.Next()
-		}
+			file, err := filesystem.NewFileFromPath(outputPath)
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to create file from path: " + err.Error())
+				return 
+			}
 
-		if err := os.Remove(outputPath); err != nil {
-			e.App.Logger().Error("Items Hooks: failed to remove temporary output file: " + err.Error())
-			return e.Next()
-		}
+			downloadRecord := core.NewRecord(downloadsCollection)
+			downloadRecord.Set("title", videoTitle)
+			downloadRecord.Set("duration", duration)
+			downloadRecord.Set("channel", channel)
+			downloadRecord.Set("user", user)
+			downloadRecord.Set("file", file)
+			downloadRecord.Set("description", description)
+			downloadRecord.Set("podcast", podcastId)
+			downloadRecord.Set("item", e.Record.Id)
+			if err := e.App.Save(downloadRecord); err != nil {
+				e.App.Logger().Error("Items Hooks: failed to save new download record: " + err.Error())
+				return 
+			}
 
-		podcastRecord, err := e.App.FindRecordById(collections.Podcasts, podcastId)
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to find podcast record: " + err.Error())
-			return e.Next()
-		}
+			downloadRecord.Set("download_link", files.GetFileURL(downloadRecord.BaseFilesPath(), file.Name))
+			if err := e.App.Save(downloadRecord); err != nil {
+				e.App.Logger().Error("Items Hooks: failed to save new download record: " + err.Error())
+				return 
+			}
 
-		xmlFileKey := podcastRecord.BaseFilesPath() + "/" + podcastRecord.GetString("file")
+			e.Record.Set("download", downloadRecord.Id)
+			if err := e.App.Save(e.Record); err != nil {
+				e.App.Logger().Error("Items Hooks: failed to save item record: " + err.Error())
+				return 
+			}
 
-		fsys, err := app.NewFilesystem()
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to open podcast filesystem: " + err.Error())
-			return e.Next()
-		}
-		defer fsys.Close()
+			if err := os.Remove(outputPath); err != nil {
+				e.App.Logger().Error("Items Hooks: failed to remove temporary output file: " + err.Error())
+				return 
+			}
 
-		r, err := fsys.GetReader(xmlFileKey)
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to get podcast XML file: " + err.Error())
-			return e.Next()
-		}
-		defer r.Close()
+			podcastRecord, err := e.App.FindRecordById(collections.Podcasts, podcastId)
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to find podcast record: " + err.Error())
+				return 
+			}
 
-		content := new(bytes.Buffer)
-		_, err = io.Copy(content, r)
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to copy XML content: " + err.Error())
-			return e.Next()
-		}
+			xmlFileKey := podcastRecord.BaseFilesPath() + "/" + podcastRecord.GetString("file")
 
-		podcast, err := rss_utils.ParseXML(content.String())
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to parse podcast XML: " + err.Error())
-			return e.Next()
-		}
+			fsys, err := app.NewFilesystem()
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to open podcast filesystem: " + err.Error())
+				return 
+			}
+			defer fsys.Close()
 
-		rss_utils.AddItemToPodcast(&podcast, videoTitle, downloadRecord.GetString("download_link"), description)
+			r, err := fsys.GetReader(xmlFileKey)
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to get podcast XML file: " + err.Error())
+				return
+			}
+			defer r.Close()
 
-		xml, err := rss_utils.GenerateXML(&podcast)
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to generate podcast XML: " + err.Error())
-			return e.Next()
-		}
+			content := new(bytes.Buffer)
+			_, err = io.Copy(content, r)
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to copy XML content: " + err.Error())
+				return 
+			}
 
-		xmlFile, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".xml")
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to create podcast XML file: " + err.Error())
-			return e.Next()
-		}
+			podcast, err := rss_utils.ParseXML(content.String())
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to parse podcast XML: " + err.Error())
+				return 
+			}
 
-		podcastRecord.Set("file", xmlFile)
-		if err := e.App.Save(podcastRecord); err != nil {
-			e.App.Logger().Error("Items Hooks: failed to save record: " + err.Error())
-			return e.Next()
-		}
+			rss_utils.AddItemToPodcast(&podcast, videoTitle, downloadRecord.GetString("download_link"), description)
+
+			xml, err := rss_utils.GenerateXML(&podcast)
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to generate podcast XML: " + err.Error())
+				return 
+			}
+
+			xmlFile, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".xml")
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to create podcast XML file: " + err.Error())
+				return
+			}
+
+			podcastRecord.Set("file", xmlFile)
+			if err := e.App.Save(podcastRecord); err != nil {
+				e.App.Logger().Error("Items Hooks: failed to save record: " + err.Error())
+				return
+			}
+		})
 
 		return e.Next()
 	})

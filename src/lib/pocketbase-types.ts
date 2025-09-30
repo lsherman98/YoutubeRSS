@@ -12,10 +12,10 @@ export enum Collections {
 	Otps = "_otps",
 	Superusers = "_superusers",
 	ApiTokens = "api_tokens",
+	ApifyRuns = "apify_runs",
 	Downloads = "downloads",
 	Items = "items",
 	Podcasts = "podcasts",
-	Runs = "runs",
 	Users = "users",
 }
 
@@ -103,12 +103,34 @@ export type ApiTokensRecord = {
 	user?: RecordIdString
 }
 
-export type DownloadsRecord = {
+export enum ApifyRunsStatusOptions {
+	"ready" = "ready",
+	"running" = "running",
+	"succeeded" = "succeeded",
+	"failed" = "failed",
+	"timed_out" = "timed_out",
+	"aborted" = "aborted",
+}
+export type ApifyRunsRecord<Toutput = unknown> = {
+	actor?: string
 	created?: IsoDateString
-	creator?: string
+	finished?: IsoDateString
+	id: string
+	output?: null | Toutput
+	run_id?: string
+	started?: IsoDateString
+	status?: ApifyRunsStatusOptions
+	updated?: IsoDateString
+	usage?: number
+}
+
+export type DownloadsRecord = {
+	channel?: string
+	created?: IsoDateString
 	duration?: number
 	file?: string
 	id: string
+	item?: RecordIdString
 	podcast?: RecordIdString
 	title?: string
 	updated?: IsoDateString
@@ -117,6 +139,7 @@ export type DownloadsRecord = {
 
 export type ItemsRecord = {
 	created?: IsoDateString
+	download?: RecordIdString
 	id: string
 	podcast?: RecordIdString
 	updated?: IsoDateString
@@ -128,7 +151,6 @@ export type PodcastsRecord = {
 	created?: IsoDateString
 	description?: string
 	file?: string
-	file_url?: string
 	id: string
 	image?: string
 	private?: boolean
@@ -138,37 +160,15 @@ export type PodcastsRecord = {
 	website?: string
 }
 
-export enum RunsStatusOptions {
-	"ready" = "ready",
-	"running" = "running",
-	"succeeded" = "succeeded",
-	"failed" = "failed",
-	"timed_out" = "timed_out",
-	"aborted" = "aborted",
-}
-export type RunsRecord<Toutput = unknown> = {
-	actor?: string
-	created?: IsoDateString
-	finished?: IsoDateString
-	id: string
-	output?: null | Toutput
-	run_id?: string
-	started?: IsoDateString
-	status?: RunsStatusOptions
-	updated?: IsoDateString
-	usage?: number
-}
-
 export type UsersRecord = {
-	avatar?: string
 	created?: IsoDateString
 	email: string
 	emailVisibility?: boolean
 	id: string
-	name?: string
 	password: string
 	tokenKey: string
 	updated?: IsoDateString
+	username?: string
 	verified?: boolean
 }
 
@@ -179,10 +179,10 @@ export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemF
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
 export type ApiTokensResponse<Texpand = unknown> = Required<ApiTokensRecord> & BaseSystemFields<Texpand>
+export type ApifyRunsResponse<Toutput = unknown, Texpand = unknown> = Required<ApifyRunsRecord<Toutput>> & BaseSystemFields<Texpand>
 export type DownloadsResponse<Texpand = unknown> = Required<DownloadsRecord> & BaseSystemFields<Texpand>
 export type ItemsResponse<Texpand = unknown> = Required<ItemsRecord> & BaseSystemFields<Texpand>
 export type PodcastsResponse<Texpand = unknown> = Required<PodcastsRecord> & BaseSystemFields<Texpand>
-export type RunsResponse<Toutput = unknown, Texpand = unknown> = Required<RunsRecord<Toutput>> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 
 // Types containing all Records and Responses, useful for creating typing helper functions
@@ -194,10 +194,10 @@ export type CollectionRecords = {
 	_otps: OtpsRecord
 	_superusers: SuperusersRecord
 	api_tokens: ApiTokensRecord
+	apify_runs: ApifyRunsRecord
 	downloads: DownloadsRecord
 	items: ItemsRecord
 	podcasts: PodcastsRecord
-	runs: RunsRecord
 	users: UsersRecord
 }
 
@@ -208,10 +208,10 @@ export type CollectionResponses = {
 	_otps: OtpsResponse
 	_superusers: SuperusersResponse
 	api_tokens: ApiTokensResponse
+	apify_runs: ApifyRunsResponse
 	downloads: DownloadsResponse
 	items: ItemsResponse
 	podcasts: PodcastsResponse
-	runs: RunsResponse
 	users: UsersResponse
 }
 
@@ -225,9 +225,9 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: '_otps'): RecordService<OtpsResponse>
 	collection(idOrName: '_superusers'): RecordService<SuperusersResponse>
 	collection(idOrName: 'api_tokens'): RecordService<ApiTokensResponse>
+	collection(idOrName: 'apify_runs'): RecordService<ApifyRunsResponse>
 	collection(idOrName: 'downloads'): RecordService<DownloadsResponse>
 	collection(idOrName: 'items'): RecordService<ItemsResponse>
 	collection(idOrName: 'podcasts'): RecordService<PodcastsResponse>
-	collection(idOrName: 'runs'): RecordService<RunsResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>
 }
