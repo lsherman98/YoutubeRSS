@@ -2,7 +2,7 @@ package collections
 
 const (
     Downloads = "downloads"
-    Runs = "runs"
+    Runs = "apify_runs"
     Items = "items"
     Users = "users"
     ApiTokens = "api_tokens"

@@ -2,6 +2,7 @@ package podcast_hooks
 
 import (
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
+	"github.com/lsherman98/yt-rss/pocketbase/files"
 	"github.com/lsherman98/yt-rss/pocketbase/rss_utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -9,33 +10,46 @@ import (
 )
 
 func Init(app *pocketbase.PocketBase) error {
-
 	app.OnRecordCreateRequest(collections.Podcasts).BindFunc(func(e *core.RecordRequestEvent) error {
 		title := e.Record.GetString("title")
 		description := e.Record.GetString("description")
+		website := e.Record.GetString("website")
+		image := e.Record.GetString("image")
 
 		podcast := rss_utils.NewPodcast(
 			title,
-			"http://example.com",
+			website,
 			description,
-			"Admin",
-			"example@example.com",
-			"http://example.com/image.jpg",
+			e.Auth.GetString("username"),
+			e.Auth.Email(),
+			files.GetFileURL(e.Record.BaseFilesPath(), image),
 		)
 
 		xml, err := rss_utils.GenerateXML(&podcast)
 		if err != nil {
-			e.App.Logger().Error("Failed to generate podcast XML")
+			e.App.Logger().Error("Podcast Hooks: failed to generate podcast XML")
 			return e.Next()
 		}
 
 		f, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".xml")
 		if err != nil {
-			e.App.Logger().Error("Failed to create podcast XML file")
+			e.App.Logger().Error("Podcast Hooks: failed to create podcast XML file")
 			return e.Next()
 		}
 
 		e.Record.Set("file", f)
+
+		return e.Next()
+	})
+
+	app.OnRecordAfterCreateSuccess(collections.Podcasts).BindFunc(func(e *core.RecordEvent) error {
+		fileName := e.Record.GetString("file")
+		e.Record.Set("file_url", files.GetFileURL(e.Record.BaseFilesPath(), fileName))
+
+		if err := e.App.Save(e.Record); err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to save podcast record")
+			return e.Next()
+		}
 
 		return e.Next()
 	})
