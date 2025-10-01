@@ -71,11 +71,11 @@ function RouteComponent() {
   const onSubmit = (values: z.infer<typeof createPodcastFormSchema>) => {
     createPodcastMutation.mutate(
       {
-        title: values.title,
-        description: values.description,
+        title: values.title || "",
+        description: values.description || "",
         user: getUserId() || "",
         image: values.image ? new File([values.image], values.image.name) : undefined,
-        website: values.website,
+        website: values.website || "",
       },
       {
         onSuccess: () => {
@@ -192,46 +192,48 @@ function RouteComponent() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {podcasts?.map((podcast) => (
-            <TableRow
-              key={podcast.id}
-              onClick={() => navigate({ to: "/podcasts/$id", params: { id: podcast.id } })}
-              className="cursor-pointer hover:bg-muted"
-            >
-              <TableCell>{podcast.title}</TableCell>
-              <TableCell>{podcast.description}</TableCell>
-              <TableCell>{podcast.website}</TableCell>
-              <TableCell>{new Date(podcast.created).toLocaleDateString()}</TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedPodcastId(podcast.id);
-                        setIsAddItemDialogOpen(true);
-                      }}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Item
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => deletePodcastMutation.mutate(podcast.id)}
-                      className="text-destructive"
-                    >
-                      <Trash className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+          {Array.isArray(podcasts) &&
+            podcasts.map((podcast) => (
+              <TableRow
+                key={podcast.id}
+                onClick={() => navigate({ to: "/podcasts/$id", params: { id: podcast.id } })}
+                className="cursor-pointer hover:bg-muted"
+              >
+                <TableCell>{podcast.title}</TableCell>
+                <TableCell>{podcast.description}</TableCell>
+                <TableCell>{podcast.website}</TableCell>
+                <TableCell>{new Date(podcast.created).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPodcastId(podcast.id);
+                          setIsAddItemDialogOpen(true);
+                        }}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Item
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => deletePodcastMutation.mutate(podcast.id)}
+                        className="text-destructive"
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
         </TableBody>
       </Table>
       <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>

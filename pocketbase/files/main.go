@@ -1,7 +1,14 @@
 package files
 
-var domain = "localhost:8090"
+import "os"
 
 func GetFileURL(basePath, fileName string) string {
-    return domain + "/api/files/" + basePath + "/" + fileName
+	var domain string
+	if os.Getenv("DEV") == "true" {
+		domain = "localhost:8090"
+	} else {
+		domain = "rss.levisherman.xyz"
+	}
+    
+	return domain + "/api/files/" + basePath + "/" + fileName
 }

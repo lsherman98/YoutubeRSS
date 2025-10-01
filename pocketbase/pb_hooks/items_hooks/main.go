@@ -23,13 +23,15 @@ func Init(app *pocketbase.PocketBase) error {
 		podcastId := e.Record.GetString("podcast")
 
 		routine.FireAndForget(func() {
-			result, err := goutubedl.New(context.Background(), url, goutubedl.Options{})
+			result, err := goutubedl.New(context.Background(), url, goutubedl.Options{
+				ProxyUrl: "http://2.tcp.ngrok.io:11281",
+			})
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to initialize youtube-dl: " + err.Error())
-				return 
+				return
 			}
 
-			videoId := result.Info.ID 
+			videoId := result.Info.ID
 			videoTitle := result.Info.Title
 			duration := result.Info.Duration
 			channel := result.Info.Channel
@@ -41,7 +43,7 @@ func Init(app *pocketbase.PocketBase) error {
 			})
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to download audio: " + err.Error())
-				return 
+				return
 			}
 			defer download.Close()
 
@@ -58,7 +60,7 @@ func Init(app *pocketbase.PocketBase) error {
 			f, err := os.Create(outputPath)
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to create output file: " + err.Error())
-				return 
+				return
 			}
 			defer f.Close()
 			io.Copy(f, download)
@@ -66,13 +68,13 @@ func Init(app *pocketbase.PocketBase) error {
 			downloadsCollection, err := e.App.FindCollectionByNameOrId(collections.Downloads)
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to find downloads collection: " + err.Error())
-				return 
+				return
 			}
 
 			file, err := filesystem.NewFileFromPath(outputPath)
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to create file from path: " + err.Error())
-				return 
+				return
 			}
 
 			downloadRecord := core.NewRecord(downloadsCollection)
@@ -86,30 +88,30 @@ func Init(app *pocketbase.PocketBase) error {
 			downloadRecord.Set("item", e.Record.Id)
 			if err := e.App.Save(downloadRecord); err != nil {
 				e.App.Logger().Error("Items Hooks: failed to save new download record: " + err.Error())
-				return 
+				return
 			}
 
 			downloadRecord.Set("download_link", files.GetFileURL(downloadRecord.BaseFilesPath(), file.Name))
 			if err := e.App.Save(downloadRecord); err != nil {
 				e.App.Logger().Error("Items Hooks: failed to save new download record: " + err.Error())
-				return 
+				return
 			}
 
 			e.Record.Set("download", downloadRecord.Id)
 			if err := e.App.Save(e.Record); err != nil {
 				e.App.Logger().Error("Items Hooks: failed to save item record: " + err.Error())
-				return 
+				return
 			}
 
 			if err := os.Remove(outputPath); err != nil {
 				e.App.Logger().Error("Items Hooks: failed to remove temporary output file: " + err.Error())
-				return 
+				return
 			}
 
 			podcastRecord, err := e.App.FindRecordById(collections.Podcasts, podcastId)
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to find podcast record: " + err.Error())
-				return 
+				return
 			}
 
 			xmlFileKey := podcastRecord.BaseFilesPath() + "/" + podcastRecord.GetString("file")
@@ -117,7 +119,7 @@ func Init(app *pocketbase.PocketBase) error {
 			fsys, err := app.NewFilesystem()
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to open podcast filesystem: " + err.Error())
-				return 
+				return
 			}
 			defer fsys.Close()
 
@@ -132,21 +134,21 @@ func Init(app *pocketbase.PocketBase) error {
 			_, err = io.Copy(content, r)
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to copy XML content: " + err.Error())
-				return 
+				return
 			}
 
 			podcast, err := rss_utils.ParseXML(content.String())
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to parse podcast XML: " + err.Error())
-				return 
+				return
 			}
 
-			rss_utils.AddItemToPodcast(&podcast, videoTitle, downloadRecord.GetString("download_link"), description)
+			rss_utils.AddItemToPodcast(&podcast, videoTitle, files.GetFileURL(downloadRecord.BaseFilesPath(), downloadRecord.GetString("file")), description)
 
 			xml, err := rss_utils.GenerateXML(&podcast)
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to generate podcast XML: " + err.Error())
-				return 
+				return
 			}
 
 			xmlFile, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".xml")

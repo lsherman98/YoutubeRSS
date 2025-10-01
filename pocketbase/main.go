@@ -7,6 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lsherman98/yt-rss/pocketbase/migrations"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/file_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/items_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/podcast_hooks"
 	"github.com/pocketbase/pocketbase"
@@ -27,6 +28,10 @@ func main() {
 	}
 
 	if err := podcast_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := file_hooks.Init(app); err != nil {
 		log.Fatal(err)
 	}
 
