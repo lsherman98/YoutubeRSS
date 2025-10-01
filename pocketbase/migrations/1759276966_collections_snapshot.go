@@ -674,33 +674,13 @@ func init() {
 						"id": "text1579384326",
 						"max": 255,
 						"min": 0,
-						"name": "name",
+						"name": "username",
 						"pattern": "",
 						"presentable": false,
 						"primaryKey": false,
 						"required": false,
 						"system": false,
 						"type": "text"
-					},
-					{
-						"hidden": false,
-						"id": "file376926767",
-						"maxSelect": 1,
-						"maxSize": 0,
-						"mimeTypes": [
-							"image/jpeg",
-							"image/png",
-							"image/svg+xml",
-							"image/gif",
-							"image/webp"
-						],
-						"name": "avatar",
-						"presentable": false,
-						"protected": false,
-						"required": false,
-						"system": false,
-						"thumbs": null,
-						"type": "file"
 					},
 					{
 						"hidden": false,
@@ -742,9 +722,9 @@ func init() {
 				"oauth2": {
 					"enabled": false,
 					"mappedFields": {
-						"avatarURL": "avatar",
+						"avatarURL": "",
 						"id": "",
-						"name": "name",
+						"name": "",
 						"username": ""
 					}
 				},
@@ -825,13 +805,26 @@ func init() {
 						"type": "relation"
 					},
 					{
-						"cascadeDelete": false,
+						"cascadeDelete": true,
 						"collectionId": "pbc_3271294384",
 						"hidden": false,
 						"id": "relation3622307261",
 						"maxSelect": 1,
 						"minSelect": 0,
 						"name": "podcast",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_2488717294",
+						"hidden": false,
+						"id": "relation2015003248",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "download",
 						"presentable": false,
 						"required": false,
 						"system": false,
@@ -999,7 +992,7 @@ func init() {
 				"id": "pbc_2805406895",
 				"indexes": [],
 				"listRule": null,
-				"name": "runs",
+				"name": "apify_runs",
 				"system": false,
 				"type": "base",
 				"updateRule": null,
@@ -1028,10 +1021,7 @@ func init() {
 						"id": "file2359244304",
 						"maxSelect": 1,
 						"maxSize": 100000000,
-						"mimeTypes": [
-							"audio/mpeg",
-							"video/webm"
-						],
+						"mimeTypes": [],
 						"name": "file",
 						"presentable": false,
 						"protected": false,
@@ -1085,7 +1075,7 @@ func init() {
 						"id": "text3154569827",
 						"max": 0,
 						"min": 0,
-						"name": "creator",
+						"name": "channel",
 						"pattern": "",
 						"presentable": false,
 						"primaryKey": false,
@@ -1094,13 +1084,26 @@ func init() {
 						"type": "text"
 					},
 					{
-						"cascadeDelete": false,
+						"cascadeDelete": true,
 						"collectionId": "pbc_3271294384",
 						"hidden": false,
 						"id": "relation3622307261",
 						"maxSelect": 1,
 						"minSelect": 0,
 						"name": "podcast",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"cascadeDelete": true,
+						"collectionId": "pbc_4204686209",
+						"hidden": false,
+						"id": "relation521872670",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "item",
 						"presentable": false,
 						"required": false,
 						"system": false,
@@ -1194,17 +1197,6 @@ func init() {
 						"system": false,
 						"thumbs": [],
 						"type": "file"
-					},
-					{
-						"exceptDomains": null,
-						"hidden": false,
-						"id": "url1292269636",
-						"name": "file_url",
-						"onlyDomains": null,
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "url"
 					},
 					{
 						"hidden": false,
