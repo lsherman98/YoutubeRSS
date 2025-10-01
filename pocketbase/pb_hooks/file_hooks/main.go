@@ -7,7 +7,10 @@ import (
 
 func Init(app *pocketbase.PocketBase) error {
 	app.OnFileDownloadRequest().BindFunc(func(e *core.FileDownloadRequestEvent) error {
-		e.Response.Header().Add("Content-Disposition", "inline")
+		collection := e.Record.Collection().Name
+		if collection == "podcasts" {
+			e.Response.Header().Add("Content-Disposition", "inline")
+		}
 		return e.Next()
 	})
 

@@ -102,23 +102,24 @@ function RouteComponent() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {podcastItems?.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="max-w-[300px]">
-                <div className="truncate" title={item.expand.download.title}>
-                  {item.expand.download.title}
-                </div>
-              </TableCell>
-              <TableCell>{formatDuration(item.expand.download.duration)}</TableCell>
-              <TableCell>{item.expand.download.channel}</TableCell>
-              <TableCell className="max-w-[200px] truncate" title={item.url}>
-                <a href={item.url} target="_blank" rel="noopener noreferrer" className="underline">
-                  {item.url}
-                </a>
-              </TableCell>
-              <TableCell>{new Date(item.created).toLocaleDateString()}</TableCell>
-            </TableRow>
-          ))}
+          {Array.isArray(podcastItems) &&
+            podcastItems.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="max-w-[300px]">
+                  <div className="truncate" title={item.expand.download?.title}>
+                    {item.expand.download?.title}
+                  </div>
+                </TableCell>
+                <TableCell>{formatDuration(item.expand.download?.duration)}</TableCell>
+                <TableCell>{item.expand.download?.channel}</TableCell>
+                <TableCell className="max-w-[200px] truncate" title={item.url}>
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="underline">
+                    {item.url}
+                  </a>
+                </TableCell>
+                <TableCell>{new Date(item.created).toLocaleDateString()}</TableCell>
+              </TableRow>
+            ))}
         </TableBody>
       </Table>
     </div>

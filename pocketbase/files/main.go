@@ -9,6 +9,6 @@ func GetFileURL(basePath, fileName string) string {
 	} else {
 		domain = "rss.levisherman.xyz"
 	}
-    
-	return domain + "/api/files/" + basePath + "/" + fileName
+
+	return "https://" + domain + "/api/files/" + basePath + "/" + fileName
 }

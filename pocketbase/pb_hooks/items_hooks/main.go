@@ -91,12 +91,6 @@ func Init(app *pocketbase.PocketBase) error {
 				return
 			}
 
-			downloadRecord.Set("download_link", files.GetFileURL(downloadRecord.BaseFilesPath(), file.Name))
-			if err := e.App.Save(downloadRecord); err != nil {
-				e.App.Logger().Error("Items Hooks: failed to save new download record: " + err.Error())
-				return
-			}
-
 			e.Record.Set("download", downloadRecord.Id)
 			if err := e.App.Save(e.Record); err != nil {
 				e.App.Logger().Error("Items Hooks: failed to save item record: " + err.Error())
@@ -143,7 +137,8 @@ func Init(app *pocketbase.PocketBase) error {
 				return
 			}
 
-			rss_utils.AddItemToPodcast(&podcast, videoTitle, files.GetFileURL(downloadRecord.BaseFilesPath(), downloadRecord.GetString("file")), description)
+			audioUrl := files.GetFileURL(downloadRecord.BaseFilesPath(), downloadRecord.GetString("file"))
+			rss_utils.AddItemToPodcast(&podcast, videoTitle, audioUrl, description, downloadRecord.Id, audioUrl)
 
 			xml, err := rss_utils.GenerateXML(&podcast)
 			if err != nil {
