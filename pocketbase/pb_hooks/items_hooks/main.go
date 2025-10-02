@@ -144,7 +144,7 @@ func Init(app *pocketbase.PocketBase) error {
 			}
 
 			audioUrl := files.GetFileURL(downloadRecord.BaseFilesPath(), downloadRecord.GetString("file"))
-			rss_utils.AddItemToPodcast(&podcast, videoTitle, audioUrl, description, downloadRecord.Id, audioUrl)
+			rss_utils.AddItemToPodcast(&podcast, videoTitle, audioUrl, description, downloadRecord.Id, audioUrl, podcast.IOwner.Name, podcast.IOwner.Email, int64(downloadRecord.GetInt("duration")))
 
 			xml, err := rss_utils.GenerateXML(&podcast)
 			if err != nil {
@@ -152,7 +152,7 @@ func Init(app *pocketbase.PocketBase) error {
 				return
 			}
 
-			xmlFile, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".xml")
+			xmlFile, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".rss")
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to create podcast XML file: " + err.Error())
 				return

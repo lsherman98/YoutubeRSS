@@ -7,35 +7,38 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3271294384")
+		collection, err := app.FindCollectionByNameOrId("_pb_users_auth_")
 		if err != nil {
 			return err
 		}
 
 		// add field
-		if err := collection.Fields.AddMarshaledJSONAt(8, []byte(`{
-			"exceptDomains": null,
+		if err := collection.Fields.AddMarshaledJSONAt(6, []byte(`{
+			"autogeneratePattern": "",
 			"hidden": false,
-			"id": "url1093929478",
-			"name": "pocketcasts_share_url",
-			"onlyDomains": null,
+			"id": "text1579384326",
+			"max": 0,
+			"min": 0,
+			"name": "name",
+			"pattern": "",
 			"presentable": false,
-			"required": false,
+			"primaryKey": false,
+			"required": true,
 			"system": false,
-			"type": "url"
+			"type": "text"
 		}`)); err != nil {
 			return err
 		}
 
 		return app.Save(collection)
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("pbc_3271294384")
+		collection, err := app.FindCollectionByNameOrId("_pb_users_auth_")
 		if err != nil {
 			return err
 		}
 
 		// remove field
-		collection.Fields.RemoveById("url1093929478")
+		collection.Fields.RemoveById("text1579384326")
 
 		return app.Save(collection)
 	})

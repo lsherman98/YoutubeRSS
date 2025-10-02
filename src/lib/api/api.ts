@@ -50,7 +50,8 @@ export async function deletePodcastItem(itemId: string) {
 }
 
 type ShareUrlResponse = {
-    share_url: string;
+    share_url?: string;
+    connect_url?: string;
 }
 
 export async function getPodcastShareUrl(podcastId: string, platform: string) {

@@ -94,10 +94,12 @@ const UserCreateForm = () => {
       onSubmit={async (event) => {
         event.preventDefault();
         const form = event.target as HTMLFormElement;
+        const username = form.username.value;
         const email = form.email.value;
         const password = form.password.value;
 
         const data = {
+          username,
           email,
           password,
           passwordConfirm: password,
@@ -114,6 +116,10 @@ const UserCreateForm = () => {
       }}
       className="flex flex-col gap-4"
     >
+      <div className="grid gap-2">
+        <Label htmlFor="username">Name</Label>
+        <Input id="username" type="text" name="name" placeholder="Your Name" required />
+      </div>
       <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
         <Input id="email" type="email" name="email" placeholder="your@email.com" required />

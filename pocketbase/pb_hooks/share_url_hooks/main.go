@@ -124,6 +124,13 @@ func Init(app *pocketbase.PocketBase) error {
 				}
 
 				return e.JSON(200, map[string]any{"share_url": podcast.GetString("pocketcasts_share_url")})
+			case "apple":
+				shareUrl := podcast.GetString("apple_share_url")
+				if shareUrl != "" {
+					return e.JSON(200, map[string]any{"share_url": shareUrl})
+				} else {
+					return e.JSON(200, map[string]any{"connect_url": "podcastsconnect.apple.com/my-podcasts/new-feed?submitfeed=" + files.GetFileURL(podcast.BaseFilesPath(), podcast.GetString("file"))})
+				}
 			}
 
 			return e.NotFoundError("Platform not supported", nil)

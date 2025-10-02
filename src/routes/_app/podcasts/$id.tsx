@@ -50,10 +50,22 @@ function RouteComponent() {
     }
   };
 
-  const handleSubscribe = async () => {
-    const res = await getPodcastShareUrl(id, "pocketcasts");
-    const url = res?.share_url || `https://pocketcasts.com/search?q=${encodeURIComponent(podcastUrl)}`;
-    window.open(url, "_blank");
+  const handlePocketCastsSubscribe = async () => {
+    try {
+      const res = await getPodcastShareUrl(id, "pocketcasts");
+      window.open(res?.share_url, "_blank");
+    } catch (error) {
+      window.open(`https://pocketcasts.com/search?q=${encodeURIComponent(podcastUrl)}`, "_blank");
+    }
+  };
+
+  const handleAppleSubscribe = async () => {
+    const res = await getPodcastShareUrl(id, "apple");
+    if (res.share_url) {
+      window.open(res?.share_url, "_blank");
+    } else if (res.connect_url) {
+      window.open(res.connect_url, "_blank");
+    }
   };
 
   return (
@@ -87,7 +99,13 @@ function RouteComponent() {
                   <img
                     src="https://static.pocketcasts.com/webplayer/assets/pocketcasts_medium_light@2x-DlOETBQn.png"
                     alt="Subscribe"
-                    onClick={handleSubscribe}
+                    onClick={handlePocketCastsSubscribe}
+                    className="h-8 cursor-pointer"
+                  />
+                  <img
+                    src="https://toolbox.marketingtools.apple.com/api/assets/featured-content/podcasts/badges/badge-2/en-us.svg"
+                    alt="Listen on Apple Podcasts"
+                    onClick={handleAppleSubscribe}
                     className="h-8 cursor-pointer"
                   />
                 </div>

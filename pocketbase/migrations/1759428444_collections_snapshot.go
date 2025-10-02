@@ -669,20 +669,6 @@ func init() {
 						"type": "bool"
 					},
 					{
-						"autogeneratePattern": "",
-						"hidden": false,
-						"id": "text1579384326",
-						"max": 255,
-						"min": 0,
-						"name": "username",
-						"pattern": "",
-						"presentable": false,
-						"primaryKey": false,
-						"required": false,
-						"system": false,
-						"type": "text"
-					},
-					{
 						"hidden": false,
 						"id": "autodate2990389176",
 						"name": "created",
@@ -861,144 +847,6 @@ func init() {
 				"viewRule": "@request.auth.id = user.id"
 			},
 			{
-				"createRule": null,
-				"deleteRule": null,
-				"fields": [
-					{
-						"autogeneratePattern": "[a-z0-9]{15}",
-						"hidden": false,
-						"id": "text3208210256",
-						"max": 15,
-						"min": 15,
-						"name": "id",
-						"pattern": "^[a-z0-9]+$",
-						"presentable": false,
-						"primaryKey": true,
-						"required": true,
-						"system": true,
-						"type": "text"
-					},
-					{
-						"hidden": false,
-						"id": "select2063623452",
-						"maxSelect": 1,
-						"name": "status",
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "select",
-						"values": [
-							"ready",
-							"running",
-							"succeeded",
-							"failed",
-							"timed_out",
-							"aborted"
-						]
-					},
-					{
-						"hidden": false,
-						"id": "number3505086064",
-						"max": null,
-						"min": null,
-						"name": "usage",
-						"onlyInt": false,
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "number"
-					},
-					{
-						"hidden": false,
-						"id": "date3029767898",
-						"max": "",
-						"min": "",
-						"name": "started",
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "date"
-					},
-					{
-						"hidden": false,
-						"id": "date2790239036",
-						"max": "",
-						"min": "",
-						"name": "finished",
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "date"
-					},
-					{
-						"autogeneratePattern": "",
-						"hidden": false,
-						"id": "text2229534404",
-						"max": 0,
-						"min": 0,
-						"name": "run_id",
-						"pattern": "",
-						"presentable": false,
-						"primaryKey": false,
-						"required": false,
-						"system": false,
-						"type": "text"
-					},
-					{
-						"autogeneratePattern": "",
-						"hidden": false,
-						"id": "text1148540665",
-						"max": 0,
-						"min": 0,
-						"name": "actor",
-						"pattern": "",
-						"presentable": false,
-						"primaryKey": false,
-						"required": false,
-						"system": false,
-						"type": "text"
-					},
-					{
-						"hidden": false,
-						"id": "json3437106334",
-						"maxSize": 0,
-						"name": "output",
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "json"
-					},
-					{
-						"hidden": false,
-						"id": "autodate2990389176",
-						"name": "created",
-						"onCreate": true,
-						"onUpdate": false,
-						"presentable": false,
-						"system": false,
-						"type": "autodate"
-					},
-					{
-						"hidden": false,
-						"id": "autodate3332085495",
-						"name": "updated",
-						"onCreate": true,
-						"onUpdate": true,
-						"presentable": false,
-						"system": false,
-						"type": "autodate"
-					}
-				],
-				"id": "pbc_2805406895",
-				"indexes": [],
-				"listRule": null,
-				"name": "apify_runs",
-				"system": false,
-				"type": "base",
-				"updateRule": null,
-				"viewRule": null
-			},
-			{
 				"createRule": "",
 				"deleteRule": "",
 				"fields": [
@@ -1020,7 +868,7 @@ func init() {
 						"hidden": false,
 						"id": "file2359244304",
 						"maxSelect": 1,
-						"maxSize": 100000000,
+						"maxSize": 1000000000,
 						"mimeTypes": [],
 						"name": "file",
 						"presentable": false,
@@ -1251,6 +1099,17 @@ func init() {
 						"type": "file"
 					},
 					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "url1093929478",
+						"name": "pocketcasts_share_url",
+						"onlyDomains": null,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "url"
+					},
+					{
 						"hidden": false,
 						"id": "autodate2990389176",
 						"name": "created",
@@ -1279,81 +1138,6 @@ func init() {
 				"type": "base",
 				"updateRule": "@request.auth.id = user.id",
 				"viewRule": "@request.auth.id = user.id"
-			},
-			{
-				"createRule": null,
-				"deleteRule": null,
-				"fields": [
-					{
-						"autogeneratePattern": "[a-z0-9]{15}",
-						"hidden": false,
-						"id": "text3208210256",
-						"max": 15,
-						"min": 15,
-						"name": "id",
-						"pattern": "^[a-z0-9]+$",
-						"presentable": false,
-						"primaryKey": true,
-						"required": true,
-						"system": true,
-						"type": "text"
-					},
-					{
-						"cascadeDelete": false,
-						"collectionId": "_pb_users_auth_",
-						"hidden": false,
-						"id": "relation2375276105",
-						"maxSelect": 1,
-						"minSelect": 0,
-						"name": "user",
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "relation"
-					},
-					{
-						"autogeneratePattern": "",
-						"hidden": false,
-						"id": "text3173753451",
-						"max": 0,
-						"min": 0,
-						"name": "hashed_token",
-						"pattern": "",
-						"presentable": false,
-						"primaryKey": false,
-						"required": false,
-						"system": false,
-						"type": "text"
-					},
-					{
-						"hidden": false,
-						"id": "autodate2990389176",
-						"name": "created",
-						"onCreate": true,
-						"onUpdate": false,
-						"presentable": false,
-						"system": false,
-						"type": "autodate"
-					},
-					{
-						"hidden": false,
-						"id": "autodate3332085495",
-						"name": "updated",
-						"onCreate": true,
-						"onUpdate": true,
-						"presentable": false,
-						"system": false,
-						"type": "autodate"
-					}
-				],
-				"id": "pbc_3525142174",
-				"indexes": [],
-				"listRule": null,
-				"name": "api_tokens",
-				"system": false,
-				"type": "base",
-				"updateRule": null,
-				"viewRule": null
 			}
 		]`
 

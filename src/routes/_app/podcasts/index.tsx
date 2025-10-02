@@ -61,8 +61,8 @@ function RouteComponent() {
   const form = useForm<z.infer<typeof createPodcastFormSchema>>({
     resolver: zodResolver(createPodcastFormSchema),
     defaultValues: {
-      title: "",
-      description: "",
+      title: "Levi's RSS Feed",
+      description: "This is my podcast description.",
       image: undefined,
       website: "",
     },

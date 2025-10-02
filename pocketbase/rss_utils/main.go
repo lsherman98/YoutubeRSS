@@ -2,6 +2,7 @@ package rss_utils
 
 import (
 	"bytes"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,11 +20,14 @@ func NewPodcast(title, link, description, authorName, email, image string) podca
 		&now,
 	)
 	p.AddAuthor(authorName, email)
+	p.IOwner = &podcast.Author{Name: authorName, Email: email}
 	p.AddImage(image)
+	p.AddCategory("Technology", []string{})
+	p.AddAtomLink(link)
 	return p
 }
 
-func AddItemToPodcast(p *podcast.Podcast, title, link, description, guid, enclosure string) {
+func AddItemToPodcast(p *podcast.Podcast, title, link, description, guid, enclosure, authorName, email string, length int64) {
 	pubDate := time.Now()
 	item := podcast.Item{
 		Title:       title,
@@ -31,7 +35,8 @@ func AddItemToPodcast(p *podcast.Podcast, title, link, description, guid, enclos
 		Description: description,
 		PubDate:     &pubDate,
 		GUID:        guid,
-		Enclosure:   &podcast.Enclosure{URL: enclosure, TypeFormatted: podcast.MP3.String(), Type: podcast.MP3, Length: 0},
+		Author:      &podcast.Author{Name: authorName, Email: email},
+		Enclosure:   &podcast.Enclosure{URL: enclosure, TypeFormatted: podcast.MP3.String(), Type: podcast.MP3, Length: length},
 	}
 	p.AddItem(item)
 }
@@ -64,7 +69,10 @@ func ParseXML(data string) (podcast.Podcast, error) {
 	link := feed.Link
 	description := feed.Description
 	image := feed.Image.URL
-	authorName := feed.ManagingEditor
+	parts := strings.Split(feed.ManagingEditor, " (")
+	email := parts[0]
+	name := strings.TrimSuffix(parts[1], ")")
+
 	var pubDate time.Time
 	if feed.PubDate != "" {
 		pubDate, _ = time.Parse(time.RFC1123Z, feed.PubDate)
@@ -80,11 +88,21 @@ func ParseXML(data string) (podcast.Podcast, error) {
 		&pubDate,
 		&now,
 	)
-	p.AddAuthor(authorName, "")
+	p.AddAuthor(name, email)
+	p.IOwner = &podcast.Author{Name: name, Email: email}
 	p.AddImage(image)
+	p.AddCategory("Technology", []string{})
+	p.AddAtomLink(link)
 
 	for _, item := range feed.Items {
-		AddItemToPodcast(&p, item.Title, item.Link, item.Description, item.GUID.Value, item.Enclosure.URL)
+		var length int64 = 0
+		if item.Enclosure != nil && item.Enclosure.Length != "" {
+			if l, err := strconv.ParseInt(item.Enclosure.Length, 10, 64); err == nil {
+				length = l
+			}
+		}
+
+		AddItemToPodcast(&p, item.Title, item.Link, item.Description, item.GUID.Value, item.Enclosure.URL, name, email, length)
 	}
 
 	return p, nil
