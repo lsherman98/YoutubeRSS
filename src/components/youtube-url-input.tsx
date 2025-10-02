@@ -27,7 +27,7 @@ export function YoutubeUrlInput({ podcastId }: { podcastId: string }) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      youtubeUrls: [{ url: "" }],
+      youtubeUrls: [{ url: "https://www.youtube.com/watch?v=lxJG6FBo9h8&pp=0gcJCfYJAYcqIYzv" }],
     },
   });
 

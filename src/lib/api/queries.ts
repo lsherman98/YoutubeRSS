@@ -24,9 +24,9 @@ export function useGetPodcastItems(podcastId: string) {
         placeholderData: keepPreviousData,
         refetchInterval: (query) => {
             if (query.state.data && query.state.data.some((item: any) => !item.download)) {
-                return 5000; 
+                return 5000;
             }
-            return false; 
+            return false;
         }
     });
 }

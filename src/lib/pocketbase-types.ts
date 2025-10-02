@@ -11,7 +11,6 @@ export enum Collections {
 	Mfas = "_mfas",
 	Otps = "_otps",
 	Superusers = "_superusers",
-	ApiTokens = "api_tokens",
 	ApifyRuns = "apify_runs",
 	Downloads = "downloads",
 	Items = "items",
@@ -95,14 +94,6 @@ export type SuperusersRecord = {
 	verified?: boolean
 }
 
-export type ApiTokensRecord = {
-	created?: IsoDateString
-	hashed_token?: string
-	id: string
-	updated?: IsoDateString
-	user?: RecordIdString
-}
-
 export enum ApifyRunsStatusOptions {
 	"ready" = "ready",
 	"running" = "running",
@@ -153,6 +144,7 @@ export type PodcastsRecord = {
 	file?: string
 	id: string
 	image?: string
+	pocketcasts_share_url?: string
 	private?: boolean
 	title?: string
 	updated?: IsoDateString
@@ -168,7 +160,6 @@ export type UsersRecord = {
 	password: string
 	tokenKey: string
 	updated?: IsoDateString
-	username?: string
 	verified?: boolean
 }
 
@@ -178,7 +169,6 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
-export type ApiTokensResponse<Texpand = unknown> = Required<ApiTokensRecord> & BaseSystemFields<Texpand>
 export type ApifyRunsResponse<Toutput = unknown, Texpand = unknown> = Required<ApifyRunsRecord<Toutput>> & BaseSystemFields<Texpand>
 export type DownloadsResponse<Texpand = unknown> = Required<DownloadsRecord> & BaseSystemFields<Texpand>
 export type ItemsResponse<Texpand = unknown> = Required<ItemsRecord> & BaseSystemFields<Texpand>
@@ -193,7 +183,6 @@ export type CollectionRecords = {
 	_mfas: MfasRecord
 	_otps: OtpsRecord
 	_superusers: SuperusersRecord
-	api_tokens: ApiTokensRecord
 	apify_runs: ApifyRunsRecord
 	downloads: DownloadsRecord
 	items: ItemsRecord
@@ -207,7 +196,6 @@ export type CollectionResponses = {
 	_mfas: MfasResponse
 	_otps: OtpsResponse
 	_superusers: SuperusersResponse
-	api_tokens: ApiTokensResponse
 	apify_runs: ApifyRunsResponse
 	downloads: DownloadsResponse
 	items: ItemsResponse
@@ -224,7 +212,6 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: '_mfas'): RecordService<MfasResponse>
 	collection(idOrName: '_otps'): RecordService<OtpsResponse>
 	collection(idOrName: '_superusers'): RecordService<SuperusersResponse>
-	collection(idOrName: 'api_tokens'): RecordService<ApiTokensResponse>
 	collection(idOrName: 'apify_runs'): RecordService<ApifyRunsResponse>
 	collection(idOrName: 'downloads'): RecordService<DownloadsResponse>
 	collection(idOrName: 'items'): RecordService<ItemsResponse>

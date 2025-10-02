@@ -48,3 +48,11 @@ export async function getPodcastItems(podcastId: string) {
 export async function deletePodcastItem(itemId: string) {
     return await pb.collection(Collections.Items).delete(itemId);
 }
+
+type ShareUrlResponse = {
+    share_url: string;
+}
+
+export async function getPodcastShareUrl(podcastId: string, platform: string) {
+    return await pb.send<ShareUrlResponse>(`/api/share_url/${podcastId}/${platform}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+}

@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDeletePodcastItem } from "@/lib/api/mutations";
+import { getPodcastShareUrl } from "@/lib/api/api";
 
 export const Route = createFileRoute("/_app/podcasts/$id")({
   component: RouteComponent,
@@ -47,6 +48,12 @@ function RouteComponent() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleSubscribe = async () => {
+    const res = await getPodcastShareUrl(id, "pocketcasts");
+    const url = res?.share_url || `https://pocketcasts.com/search?q=${encodeURIComponent(podcastUrl)}`;
+    window.open(url, "_blank");
   };
 
   return (
@@ -77,6 +84,12 @@ function RouteComponent() {
                     <Copy className="h-4 w-4 mr-1" />
                     {copied ? "Copied!" : "Copy"}
                   </Button>
+                  <img
+                    src="https://static.pocketcasts.com/webplayer/assets/pocketcasts_medium_light@2x-DlOETBQn.png"
+                    alt="Subscribe"
+                    onClick={handleSubscribe}
+                    className="h-8 cursor-pointer"
+                  />
                 </div>
                 <span className="text-xs text-gray-600">Paste this url into your podcast app to start listening!</span>
               </div>

@@ -36,7 +36,6 @@ func Init(app *pocketbase.PocketBase) error {
 			return e.Next()
 		}
 
-		e.App.Logger().Info("record id: " + e.Record.Id)
 		f, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".xml")
 		if err != nil {
 			e.App.Logger().Error("Podcast Hooks: failed to create podcast XML file")
