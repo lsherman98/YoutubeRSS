@@ -16,6 +16,11 @@ func Init(app *pocketbase.PocketBase) error {
 		website := e.Record.GetString("website")
 		image := e.Record.GetString("image")
 
+		if err := e.App.Save(e.Record); err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to save record: " + err.Error())
+			return e.Next()
+		}
+
 		podcast := rss_utils.NewPodcast(
 			title,
 			website,
@@ -31,6 +36,7 @@ func Init(app *pocketbase.PocketBase) error {
 			return e.Next()
 		}
 
+		e.App.Logger().Info("record id: " + e.Record.Id)
 		f, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".xml")
 		if err != nil {
 			e.App.Logger().Error("Podcast Hooks: failed to create podcast XML file")
@@ -39,15 +45,8 @@ func Init(app *pocketbase.PocketBase) error {
 
 		e.Record.Set("file", f)
 
-		return e.Next()
-	})
-
-	app.OnRecordAfterCreateSuccess(collections.Podcasts).BindFunc(func(e *core.RecordEvent) error {
-		fileName := e.Record.GetString("file")
-		e.Record.Set("file_url", files.GetFileURL(e.Record.BaseFilesPath(), fileName))
-
 		if err := e.App.Save(e.Record); err != nil {
-			e.App.Logger().Error("Podcast Hooks: failed to save podcast record")
+			e.App.Logger().Error("Podcast Hooks: failed to save record: " + err.Error())
 			return e.Next()
 		}
 

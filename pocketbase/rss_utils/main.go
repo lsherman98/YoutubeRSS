@@ -36,6 +36,15 @@ func AddItemToPodcast(p *podcast.Podcast, title, link, description, guid, enclos
 	p.AddItem(item)
 }
 
+func RemoveItemFromPodcast(p *podcast.Podcast, guid string) {
+	for i, item := range p.Items {
+		if item.GUID == guid {
+			p.Items = append(p.Items[:i], p.Items[i+1:]...)
+			break
+		}
+	}
+}
+
 func GenerateXML(p *podcast.Podcast) (string, error) {
 	var buf bytes.Buffer
 	if err := p.Encode(&buf); err != nil {

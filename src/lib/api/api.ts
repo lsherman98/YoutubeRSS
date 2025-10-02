@@ -44,3 +44,7 @@ export async function getPodcastItems(podcastId: string) {
         expand: "download"
     });
 }
+
+export async function deletePodcastItem(itemId: string) {
+    return await pb.collection(Collections.Items).delete(itemId);
+}

@@ -21,6 +21,12 @@ export function useGetPodcastItems(podcastId: string) {
     return useQuery({
         queryKey: ['items', podcastId],
         queryFn: () => getPodcastItems(podcastId),
-        placeholderData: keepPreviousData
+        placeholderData: keepPreviousData,
+        refetchInterval: (query) => {
+            if (query.state.data && query.state.data.some((item: any) => !item.download)) {
+                return 5000; 
+            }
+            return false; 
+        }
     });
 }

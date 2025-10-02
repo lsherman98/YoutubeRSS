@@ -158,7 +158,7 @@ function RouteComponent() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
                         <ImageIcon className="h-4 w-4" />
-                        Podcast Cover
+                        Cover Image
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -223,7 +223,10 @@ function RouteComponent() {
                         Add Item
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => deletePodcastMutation.mutate(podcast.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePodcastMutation.mutate(podcast.id);
+                        }}
                         className="text-destructive"
                       >
                         <Trash className="mr-2 h-4 w-4" />

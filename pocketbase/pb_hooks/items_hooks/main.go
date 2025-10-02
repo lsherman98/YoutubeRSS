@@ -131,6 +131,12 @@ func Init(app *pocketbase.PocketBase) error {
 				return
 			}
 
+			file, err = fsys.GetReuploadableFile(xmlFileKey, true)
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to get reuploadable file: " + err.Error())
+				return
+			}
+
 			podcast, err := rss_utils.ParseXML(content.String())
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to parse podcast XML: " + err.Error())
@@ -152,12 +158,84 @@ func Init(app *pocketbase.PocketBase) error {
 				return
 			}
 
+			xmlFile.Name = file.Name
+
 			podcastRecord.Set("file", xmlFile)
 			if err := e.App.Save(podcastRecord); err != nil {
 				e.App.Logger().Error("Items Hooks: failed to save record: " + err.Error())
 				return
 			}
 		})
+
+		return e.Next()
+	})
+
+	app.OnRecordAfterDeleteSuccess(collections.Items).BindFunc(func(e *core.RecordEvent) error {
+		podcastId := e.Record.GetString("podcast")
+		downloadId := e.Record.GetString("download")
+
+		podcastRecord, err := e.App.FindRecordById(collections.Podcasts, podcastId)
+		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to find podcast record: " + err.Error())
+			return e.Next()
+		}
+
+		xmlFileKey := podcastRecord.BaseFilesPath() + "/" + podcastRecord.GetString("file")
+
+		fsys, err := app.NewFilesystem()
+		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to open podcast filesystem: " + err.Error())
+			return e.Next()
+		}
+		defer fsys.Close()
+
+		r, err := fsys.GetReader(xmlFileKey)
+		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to get podcast XML file: " + err.Error())
+			return e.Next()
+		}
+		defer r.Close()
+
+		content := new(bytes.Buffer)
+		_, err = io.Copy(content, r)
+		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to copy XML content: " + err.Error())
+			return e.Next()
+		}
+
+		podcast, err := rss_utils.ParseXML(content.String())
+		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to parse podcast XML: " + err.Error())
+			return e.Next()
+		}
+
+		rss_utils.RemoveItemFromPodcast(&podcast, downloadId)
+
+		xml, err := rss_utils.GenerateXML(&podcast)
+		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to generate podcast XML: " + err.Error())
+			return e.Next()
+		}
+
+		file, err := fsys.GetReuploadableFile(xmlFileKey, true)
+		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to get reuploadable file: " + err.Error())
+			return e.Next()
+		}
+
+		xmlFile, err := filesystem.NewFileFromBytes([]byte(xml), file.OriginalName)
+		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to create podcast XML file: " + err.Error())
+			return e.Next()
+		}
+
+		xmlFile.Name = file.Name
+
+		podcastRecord.Set("file", xmlFile)
+		if err := e.App.Save(podcastRecord); err != nil {
+			e.App.Logger().Error("Items Hooks: failed to save record: " + err.Error())
+			return e.Next()
+		}
 
 		return e.Next()
 	})

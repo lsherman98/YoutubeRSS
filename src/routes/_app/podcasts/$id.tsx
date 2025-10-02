@@ -12,8 +12,15 @@ import {
 } from "@/components/ui/dialog";
 import { YoutubeUrlInput } from "@/components/youtube-url-input";
 import { useState } from "react";
-import { Plus, Copy } from "lucide-react";
+import { Plus, Copy, LoaderCircle, MoreHorizontal } from "lucide-react";
 import { pb } from "@/lib/pocketbase";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useDeletePodcastItem } from "@/lib/api/mutations";
 
 export const Route = createFileRoute("/_app/podcasts/$id")({
   component: RouteComponent,
@@ -32,6 +39,7 @@ function RouteComponent() {
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const podcastUrl = podcast ? pb.files.getURL(podcast, podcast?.file) : "";
+  const deleteItemMutation = useDeletePodcastItem();
 
   const copyToClipboard = async () => {
     if (podcastUrl) {
@@ -62,12 +70,15 @@ function RouteComponent() {
               </p>
             )}
             {podcastUrl && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Podcast URL:</span>
-                <Button variant="outline" size="sm" onClick={copyToClipboard} className="h-8">
-                  <Copy className="h-4 w-4 mr-1" />
-                  {copied ? "Copied!" : "Copy"}
-                </Button>
+              <div className="flex flex-col items-start gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Podcast URL:</span>
+                  <Button variant="outline" size="sm" onClick={copyToClipboard} className="h-8">
+                    <Copy className="h-4 w-4 mr-1" />
+                    {copied ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
+                <span className="text-xs text-gray-600">Paste this url into your podcast app to start listening!</span>
               </div>
             )}
           </div>
@@ -99,27 +110,55 @@ function RouteComponent() {
             <TableHead>Channel</TableHead>
             <TableHead>Url</TableHead>
             <TableHead>Added</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {Array.isArray(podcastItems) &&
-            podcastItems.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="max-w-[300px]">
-                  <div className="truncate" title={item.expand.download?.title}>
-                    {item.expand.download?.title}
-                  </div>
-                </TableCell>
-                <TableCell>{formatDuration(item.expand.download?.duration)}</TableCell>
-                <TableCell>{item.expand.download?.channel}</TableCell>
-                <TableCell className="max-w-[200px] truncate" title={item.url}>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="underline">
-                    {item.url}
-                  </a>
-                </TableCell>
-                <TableCell>{new Date(item.created).toLocaleDateString()}</TableCell>
-              </TableRow>
-            ))}
+            podcastItems.map((item) => {
+              if (!item.expand.download) {
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell colSpan={6} className="text-center">
+                      <div className="flex items-center justify-center py-2 bg-gray-100 rounded">
+                        <LoaderCircle className="h-6 w-6 animate-spin mr-2" />
+                        Loading...
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              }
+              return (
+                <TableRow key={item.id}>
+                  <TableCell className="max-w-[350px] truncate" title={item.expand.download.title}>
+                    {item.expand.download.title}
+                  </TableCell>
+                  <TableCell>{formatDuration(item.expand.download.duration)}</TableCell>
+                  <TableCell>{item.expand.download.channel}</TableCell>
+                  <TableCell className="max-w-[200px] truncate" title={item.url}>
+                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="underline">
+                      {item.url}
+                    </a>
+                  </TableCell>
+                  <TableCell>{new Date(item.created).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem variant="destructive" onClick={() => deleteItemMutation.mutate(item.id)}>
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
         </TableBody>
       </Table>
     </div>
