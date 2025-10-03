@@ -669,6 +669,20 @@ func init() {
 						"type": "bool"
 					},
 					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text1579384326",
+						"max": 0,
+						"min": 0,
+						"name": "name",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": true,
+						"system": false,
+						"type": "text"
+					},
+					{
 						"hidden": false,
 						"id": "autodate2990389176",
 						"name": "created",
@@ -1103,6 +1117,39 @@ func init() {
 						"hidden": false,
 						"id": "url1093929478",
 						"name": "pocketcasts_share_url",
+						"onlyDomains": null,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "url"
+					},
+					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "url1355366635",
+						"name": "apple_share_url",
+						"onlyDomains": null,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "url"
+					},
+					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "url791351662",
+						"name": "spotify_share_url",
+						"onlyDomains": null,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "url"
+					},
+					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "url3757049752",
+						"name": "youtube_share_url",
 						"onlyDomains": null,
 						"presentable": false,
 						"required": false,

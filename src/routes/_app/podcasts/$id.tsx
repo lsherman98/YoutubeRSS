@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { YoutubeUrlInput } from "@/components/youtube-url-input";
 import { useState } from "react";
-import { Plus, Copy, LoaderCircle, MoreHorizontal } from "lucide-react";
+import { Plus, LoaderCircle, MoreHorizontal } from "lucide-react";
 import { pb } from "@/lib/pocketbase";
 import {
   DropdownMenu,
@@ -22,6 +22,57 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeletePodcastItem } from "@/lib/api/mutations";
 import { getPodcastShareUrl } from "@/lib/api/api";
+import { toast } from "sonner";
+
+interface PodcastButtonProps {
+  href: string;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  platform: "apple" | "spotify" | "youtube" | "pocketcasts" | "rssFeed";
+  label: string;
+}
+
+function PodcastButton({ href, onClick, platform, label }: PodcastButtonProps) {
+  const buttonClasses = {
+    apple: "w-[165px]",
+    spotify: "w-[106px]",
+    youtube: "w-[165px]",
+    pocketcasts: "w-[150px]",
+    rssFeed: "w-[121px]",
+  };
+
+  const bgPositions = {
+    apple: { light: "bg-[position:-230px_7px]", dark: "dark:bg-[position:10px_7px]" },
+    spotify: { light: "bg-[position:-230px_-53px]", dark: "dark:bg-[position:10px_-53px]" },
+    youtube: { light: "bg-[position:-230px_-717px]", dark: "dark:bg-[position:10px_-717px]" },
+    pocketcasts: { light: "bg-[position:-230px_-473px]", dark: "dark:bg-[position:10px_-473px]" },
+    rssFeed: { light: "bg-[position:-230px_-653px]", dark: "dark:bg-[position:10px_-653px]" },
+  };
+
+  const widthClass = buttonClasses[platform];
+  const bgLight = bgPositions[platform].light;
+  const bgDark = bgPositions[platform].dark;
+
+  return (
+    <a
+      href={href}
+      onClick={onClick}
+      className={`
+        inline-block h-[40px] ${widthClass}
+        bg-white dark:bg-black
+        border border-black dark:border-gray-700
+        rounded-md
+        bg-[url('https://www.buzzsprout.com/images/badges/listen-on-embed.svg')]
+        bg-no-repeat
+        ${bgLight} ${bgDark}
+        indent-[-9000px]
+        transition-opacity hover:opacity-80
+        cursor-pointer
+      `}
+    >
+      {label}
+    </a>
+  );
+}
 
 export const Route = createFileRoute("/_app/podcasts/$id")({
   component: RouteComponent,
@@ -38,29 +89,11 @@ function RouteComponent() {
   const { data: podcastItems } = useGetPodcastItems(id);
   const { data: podcast } = useGetPodcast(id);
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
   const podcastUrl = podcast ? pb.files.getURL(podcast, podcast?.file) : "";
   const deleteItemMutation = useDeletePodcastItem();
 
-  const copyToClipboard = async () => {
-    if (podcastUrl) {
-      await navigator.clipboard.writeText(podcastUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handlePocketCastsSubscribe = async () => {
-    try {
-      const res = await getPodcastShareUrl(id, "pocketcasts");
-      window.open(res?.share_url, "_blank");
-    } catch (error) {
-      window.open(`https://pocketcasts.com/search?q=${encodeURIComponent(podcastUrl)}`, "_blank");
-    }
-  };
-
-  const handleAppleSubscribe = async () => {
-    const res = await getPodcastShareUrl(id, "apple");
+  const handleSubscribe = async (platform: string) => {
+    const res = await getPodcastShareUrl(id, platform);
     if (res.share_url) {
       window.open(res?.share_url, "_blank");
     } else if (res.connect_url) {
@@ -90,26 +123,56 @@ function RouteComponent() {
             )}
             {podcastUrl && (
               <div className="flex flex-col items-start gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Podcast URL:</span>
-                  <Button variant="outline" size="sm" onClick={copyToClipboard} className="h-8">
-                    <Copy className="h-4 w-4 mr-1" />
-                    {copied ? "Copied!" : "Copy"}
-                  </Button>
-                  <img
-                    src="https://static.pocketcasts.com/webplayer/assets/pocketcasts_medium_light@2x-DlOETBQn.png"
-                    alt="Subscribe"
-                    onClick={handlePocketCastsSubscribe}
-                    className="h-8 cursor-pointer"
+                <div className="flex flex-wrap gap-2">
+                  <PodcastButton
+                    href="#"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (podcastUrl) {
+                        await navigator.clipboard.writeText(podcastUrl);
+                        toast.success("Copied RSS feed URL to clipboard!");
+                      }
+                    }}
+                    platform="rssFeed"
+                    label="get RSS Feed"
                   />
-                  <img
-                    src="https://toolbox.marketingtools.apple.com/api/assets/featured-content/podcasts/badges/badge-2/en-us.svg"
-                    alt="Listen on Apple Podcasts"
-                    onClick={handleAppleSubscribe}
-                    className="h-8 cursor-pointer"
+                  <PodcastButton
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSubscribe("apple");
+                    }}
+                    platform="apple"
+                    label="Listen on Apple Podcasts"
+                  />
+                  <PodcastButton
+                    href={"#"}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSubscribe("spotify");
+                    }}
+                    platform="spotify"
+                    label="Listen on Spotify"
+                  />
+                  <PodcastButton
+                    href={"#"}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSubscribe("youtube");
+                    }}
+                    platform="youtube"
+                    label="Listen on YouTube"
+                  />
+                  <PodcastButton
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSubscribe("pocketcasts");
+                    }}
+                    platform="pocketcasts"
+                    label="Listen on Pocket Casts"
                   />
                 </div>
-                <span className="text-xs text-gray-600">Paste this url into your podcast app to start listening!</span>
               </div>
             )}
           </div>

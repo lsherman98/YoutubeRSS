@@ -3,7 +3,9 @@ package share_url_hooks
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
@@ -82,7 +84,7 @@ func Init(app *pocketbase.PocketBase) error {
 
 					if addResp.Status != "poll" || addResp.PollUUID == "" {
 						e.App.Logger().Error("Share URL Route: unexpected add feed response", "response", addResp)
-						return e.InternalServerError("Failed to get share URL", nil)
+						return e.JSON(200, map[string]any{"connect_url": fmt.Sprintf("https://pocketcasts.com/search?q=%s", url.QueryEscape(podcastURL))})
 					}
 
 					if addResp.Status == "poll" && addResp.PollUUID != "" {
@@ -117,7 +119,7 @@ func Init(app *pocketbase.PocketBase) error {
 								break
 							} else if pollResp.Status == "error" {
 								e.App.Logger().Error("Podcast Hooks: Pocketcasts returned error status", "error", pollResp)
-								break
+								return e.JSON(200, map[string]any{"connect_url": fmt.Sprintf("https://pocketcasts.com/search?q=%s", url.QueryEscape(podcastURL))})
 							}
 						}
 					}
@@ -127,9 +129,23 @@ func Init(app *pocketbase.PocketBase) error {
 			case "apple":
 				shareUrl := podcast.GetString("apple_share_url")
 				if shareUrl != "" {
+					return e.JSON(200, map[string]any{"share_url": "podcast://" + shareUrl})
+				} else {
+					return e.JSON(200, map[string]any{"connect_url": "https://podcastsconnect.apple.com/my-podcasts/new-feed?submitfeed=" + files.GetFileURL(podcast.BaseFilesPath(), podcast.GetString("file"))})
+				}
+			case "spotify":
+				shareUrl := podcast.GetString("spotify_share_url")
+				if shareUrl != "" {
 					return e.JSON(200, map[string]any{"share_url": shareUrl})
 				} else {
-					return e.JSON(200, map[string]any{"connect_url": "podcastsconnect.apple.com/my-podcasts/new-feed?submitfeed=" + files.GetFileURL(podcast.BaseFilesPath(), podcast.GetString("file"))})
+					return e.JSON(200, map[string]any{"connect_url": "https://creators.spotify.com/dash/submit"})
+				}
+			case "youtube":
+				shareUrl := podcast.GetString("youtube_share_url")
+				if shareUrl != "" {
+					return e.JSON(200, map[string]any{"share_url": shareUrl})
+				} else {
+					return e.JSON(200, map[string]any{"connect_url": "https://music.youtube.com/library/podcasts"})
 				}
 			}
 
