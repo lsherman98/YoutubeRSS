@@ -159,8 +159,8 @@ func Init(app *pocketbase.PocketBase) error {
 			}
 
 			xmlFile.Name = currentXmlFile.Name
-
 			podcastRecord.Set("file", xmlFile)
+			
 			if err := e.App.Save(podcastRecord); err != nil {
 				e.App.Logger().Error("Items Hooks: failed to save record: " + err.Error())
 				return

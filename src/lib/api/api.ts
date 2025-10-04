@@ -18,6 +18,10 @@ export async function createPodcast(data: Omit<PodcastsRecord, "id" | "image"> &
     return await pb.collection(Collections.Podcasts).create(data);
 }
 
+export async function updatePodcast(id: string, data: Partial<PodcastsRecord & { image?: File }>) {
+    return await pb.collection(Collections.Podcasts).update(id, data);
+}
+
 export async function getPodcasts() {
     return await pb.collection(Collections.Podcasts).getFullList({
         filter: `user = "${getUserId()}"`,

@@ -11,7 +11,7 @@ export function useGetPodcasts() {
 
 export function useGetPodcast(podcastId: string) {
     return useQuery({
-        queryKey: ['podcasts'],
+        queryKey: ['podcast', podcastId],
         queryFn: () => getPodcast(podcastId),
         placeholderData: keepPreviousData
     });

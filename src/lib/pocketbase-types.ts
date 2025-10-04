@@ -11,7 +11,6 @@ export enum Collections {
 	Mfas = "_mfas",
 	Otps = "_otps",
 	Superusers = "_superusers",
-	ApifyRuns = "apify_runs",
 	Downloads = "downloads",
 	Items = "items",
 	Podcasts = "podcasts",
@@ -94,27 +93,6 @@ export type SuperusersRecord = {
 	verified?: boolean
 }
 
-export enum ApifyRunsStatusOptions {
-	"ready" = "ready",
-	"running" = "running",
-	"succeeded" = "succeeded",
-	"failed" = "failed",
-	"timed_out" = "timed_out",
-	"aborted" = "aborted",
-}
-export type ApifyRunsRecord<Toutput = unknown> = {
-	actor?: string
-	created?: IsoDateString
-	finished?: IsoDateString
-	id: string
-	output?: null | Toutput
-	run_id?: string
-	started?: IsoDateString
-	status?: ApifyRunsStatusOptions
-	updated?: IsoDateString
-	usage?: number
-}
-
 export type DownloadsRecord = {
 	channel?: string
 	created?: IsoDateString
@@ -139,6 +117,7 @@ export type ItemsRecord = {
 }
 
 export type PodcastsRecord = {
+	apple_share_url?: string
 	created?: IsoDateString
 	description?: string
 	file?: string
@@ -146,10 +125,12 @@ export type PodcastsRecord = {
 	image?: string
 	pocketcasts_share_url?: string
 	private?: boolean
+	spotify_share_url?: string
 	title?: string
 	updated?: IsoDateString
 	user?: RecordIdString
 	website?: string
+	youtube_share_url?: string
 }
 
 export type UsersRecord = {
@@ -157,6 +138,7 @@ export type UsersRecord = {
 	email: string
 	emailVisibility?: boolean
 	id: string
+	name: string
 	password: string
 	tokenKey: string
 	updated?: IsoDateString
@@ -169,7 +151,6 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
-export type ApifyRunsResponse<Toutput = unknown, Texpand = unknown> = Required<ApifyRunsRecord<Toutput>> & BaseSystemFields<Texpand>
 export type DownloadsResponse<Texpand = unknown> = Required<DownloadsRecord> & BaseSystemFields<Texpand>
 export type ItemsResponse<Texpand = unknown> = Required<ItemsRecord> & BaseSystemFields<Texpand>
 export type PodcastsResponse<Texpand = unknown> = Required<PodcastsRecord> & BaseSystemFields<Texpand>
@@ -183,7 +164,6 @@ export type CollectionRecords = {
 	_mfas: MfasRecord
 	_otps: OtpsRecord
 	_superusers: SuperusersRecord
-	apify_runs: ApifyRunsRecord
 	downloads: DownloadsRecord
 	items: ItemsRecord
 	podcasts: PodcastsRecord
@@ -196,7 +176,6 @@ export type CollectionResponses = {
 	_mfas: MfasResponse
 	_otps: OtpsResponse
 	_superusers: SuperusersResponse
-	apify_runs: ApifyRunsResponse
 	downloads: DownloadsResponse
 	items: ItemsResponse
 	podcasts: PodcastsResponse
@@ -212,7 +191,6 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: '_mfas'): RecordService<MfasResponse>
 	collection(idOrName: '_otps'): RecordService<OtpsResponse>
 	collection(idOrName: '_superusers'): RecordService<SuperusersResponse>
-	collection(idOrName: 'apify_runs'): RecordService<ApifyRunsResponse>
 	collection(idOrName: 'downloads'): RecordService<DownloadsResponse>
 	collection(idOrName: 'items'): RecordService<ItemsResponse>
 	collection(idOrName: 'podcasts'): RecordService<PodcastsResponse>

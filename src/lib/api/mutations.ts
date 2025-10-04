@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addYoutubeUrls, createPodcast, deletePodcast, deletePodcastItem } from "./api";
+import { addYoutubeUrls, createPodcast, deletePodcast, deletePodcastItem, updatePodcast } from "./api";
 import { handleError } from "../utils";
 import type { PodcastsRecord } from "../pocketbase-types";
 
@@ -36,6 +36,18 @@ export function useCreatePodcast() {
         onError: handleError,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["podcasts"] });
+        },
+    })
+}
+
+export function useUpdatePodcast() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string, data: Partial<PodcastsRecord & { image?: File }> }) => updatePodcast(id, data),
+        onError: handleError,
+        onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: ["podcast", id] });
         },
     })
 }
