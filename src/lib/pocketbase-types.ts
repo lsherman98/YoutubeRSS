@@ -117,20 +117,20 @@ export type ItemsRecord = {
 }
 
 export type PodcastsRecord = {
-	apple_share_url?: string
+	apple_url?: string
 	created?: IsoDateString
 	description?: string
 	file?: string
 	id: string
 	image?: string
-	pocketcasts_share_url?: string
+	pocketcasts_url?: string
 	private?: boolean
-	spotify_share_url?: string
+	spotify_url?: string
 	title?: string
 	updated?: IsoDateString
 	user?: RecordIdString
 	website?: string
-	youtube_share_url?: string
+	youtube_url?: string
 }
 
 export type UsersRecord = {

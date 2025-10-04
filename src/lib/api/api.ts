@@ -22,6 +22,14 @@ export async function updatePodcast(id: string, data: Partial<PodcastsRecord & {
     return await pb.collection(Collections.Podcasts).update(id, data);
 }
 
+export async function deletePodcast(podcastId: string) {
+    return await pb.collection(Collections.Podcasts).delete(podcastId);
+}
+
+export function getPodcast(podcastId: string) {
+    return pb.collection(Collections.Podcasts).getOne(podcastId);
+}
+
 export async function getPodcasts() {
     return await pb.collection(Collections.Podcasts).getFullList({
         filter: `user = "${getUserId()}"`,
@@ -29,15 +37,7 @@ export async function getPodcasts() {
     });
 }
 
-export function getPodcast(podcastId: string) {
-    return pb.collection(Collections.Podcasts).getOne(podcastId);
-}
-
-export async function deletePodcast(podcastId: string) {
-    return await pb.collection(Collections.Podcasts).delete(podcastId);
-}
-
-type ExpandDownload = {
+export type ExpandDownload = {
     download: DownloadsResponse
 }
 
@@ -54,8 +54,7 @@ export async function deletePodcastItem(itemId: string) {
 }
 
 type ShareUrlResponse = {
-    share_url?: string;
-    connect_url?: string;
+    url: string;
 }
 
 export async function getPodcastShareUrl(podcastId: string, platform: string) {

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
+	u "net/url"
 	"time"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
@@ -15,13 +15,13 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-type AddFeedRequest struct {
+type PocketCastsAddFeedReq struct {
 	Url          string  `json:"url"`
 	PublicOption string  `json:"public_option"`
 	PollUUID     *string `json:"poll_uuid"`
 }
 
-type AddFeedResponse struct {
+type PocketCastsAddFeedResp struct {
 	Status   string `json:"status"`
 	PollUUID string `json:"poll_uuid"`
 	Result   struct {
@@ -37,22 +37,22 @@ func Init(app *pocketbase.PocketBase) error {
 
 			podcast, err := e.App.FindRecordById(collections.Podcasts, podcastId)
 			if err != nil {
-				return e.NotFoundError("Podcast not found", nil)
+				return e.NotFoundError("invalid podcast id", nil)
 			}
 
 			if podcast.GetString("user") != e.Auth.Id {
-				return e.ForbiddenError("You do not have access to this podcast", nil)
+				return e.ForbiddenError("forbidden", nil)
 			}
 
 			switch platform {
 			case "pocketcasts":
-				shareUrl := podcast.GetString("pocketcasts_share_url")
-				if shareUrl != "" {
-					return e.JSON(200, map[string]any{"share_url": shareUrl})
+				url := podcast.GetString("pocketcasts_url")
+				if url != "" {
+					return e.JSON(200, map[string]any{"url": url})
 				} else {
 					fileName := podcast.GetString("file")
 					podcastURL := files.GetFileURL(podcast.BaseFilesPath(), fileName)
-					addFeedReq := AddFeedRequest{
+					addFeedReq := PocketCastsAddFeedReq{
 						Url:          podcastURL,
 						PublicOption: "no",
 						PollUUID:     nil,
@@ -66,25 +66,20 @@ func Init(app *pocketbase.PocketBase) error {
 					}
 					defer resp.Body.Close()
 
-					var addResp AddFeedResponse
+					var addResp PocketCastsAddFeedResp
 					if err := json.NewDecoder(resp.Body).Decode(&addResp); err != nil {
-						e.App.Logger().Error("Share URL Route: failed to decode add feed response: " + err.Error())
 						return e.Next()
 					}
 
+					searchURL := fmt.Sprintf("https://pocketcasts.com/search?q=%s", u.QueryEscape(podcastURL))
+
 					if addResp.Status == "ok" {
-						shareUrl := addResp.Result.ShareLink
-						podcast.Set("pocketcasts_share_url", shareUrl)
+						url = addResp.Result.ShareLink
+						podcast.Set("pocketcasts_url", url)
 						if err := e.App.Save(podcast); err != nil {
-							e.App.Logger().Error("Share URL Route: failed to save podcast with share URL: " + err.Error())
 							return e.Next()
 						}
-						return e.JSON(200, map[string]any{"share_url": shareUrl})
-					}
-
-					if addResp.Status != "poll" || addResp.PollUUID == "" {
-						e.App.Logger().Error("Share URL Route: unexpected add feed response", "response", addResp)
-						return e.JSON(200, map[string]any{"connect_url": fmt.Sprintf("https://pocketcasts.com/search?q=%s", url.QueryEscape(podcastURL))})
+						return e.JSON(200, map[string]any{"url": url})
 					}
 
 					if addResp.Status == "poll" && addResp.PollUUID != "" {
@@ -92,7 +87,7 @@ func Init(app *pocketbase.PocketBase) error {
 						for range 30 {
 							time.Sleep(2 * time.Second)
 
-							pollReq := AddFeedRequest{
+							pollReq := PocketCastsAddFeedReq{
 								Url:          podcastURL,
 								PublicOption: "no",
 								PollUUID:     &addResp.PollUUID,
@@ -101,55 +96,51 @@ func Init(app *pocketbase.PocketBase) error {
 
 							resp, err := http.Post(pollURL, "application/json", bytes.NewBuffer(pollJSON))
 							if err != nil {
-								e.App.Logger().Error("Podcast Hooks: failed to poll feed: " + err.Error())
 								continue
 							}
 
-							var pollResp AddFeedResponse
+							var pollResp PocketCastsAddFeedResp
 							if err := json.NewDecoder(resp.Body).Decode(&pollResp); err != nil {
-								e.App.Logger().Error("Podcast Hooks: failed to decode poll response: " + err.Error())
 								continue
 							}
 
 							if pollResp.Status == "ok" && pollResp.Result.ShareLink != "" {
-								podcast.Set("pocketcasts_share_url", pollResp.Result.ShareLink)
-								if err := e.App.Save(podcast); err != nil {
-									e.App.Logger().Error("Podcast Hooks: failed to save share URL: " + err.Error())
-								}
+								podcast.Set("pocketcasts_url", pollResp.Result.ShareLink)
+								e.App.Save(podcast)
 								break
 							} else if pollResp.Status == "error" {
 								e.App.Logger().Error("Podcast Hooks: Pocketcasts returned error status", "error", pollResp)
-								return e.JSON(200, map[string]any{"connect_url": fmt.Sprintf("https://pocketcasts.com/search?q=%s", url.QueryEscape(podcastURL))})
+								return e.JSON(200, map[string]any{"url": searchURL})
 							}
 						}
+					} else {
+						return e.JSON(200, map[string]any{"url": searchURL})
 					}
 				}
-
-				return e.JSON(200, map[string]any{"share_url": podcast.GetString("pocketcasts_share_url")})
 			case "apple":
-				shareUrl := podcast.GetString("apple_share_url")
+				shareUrl := podcast.GetString("apple_url")
 				if shareUrl != "" {
-					return e.JSON(200, map[string]any{"share_url": "podcast://" + shareUrl})
+					return e.JSON(200, map[string]any{"url": "podcast://" + shareUrl})
 				} else {
-					return e.JSON(200, map[string]any{"connect_url": "https://podcastsconnect.apple.com/my-podcasts/new-feed?submitfeed=" + files.GetFileURL(podcast.BaseFilesPath(), podcast.GetString("file"))})
+					return e.JSON(200, map[string]any{"url": nil})
 				}
 			case "spotify":
-				shareUrl := podcast.GetString("spotify_share_url")
+				shareUrl := podcast.GetString("spotify_url")
 				if shareUrl != "" {
-					return e.JSON(200, map[string]any{"share_url": shareUrl})
+					return e.JSON(200, map[string]any{"url": shareUrl})
 				} else {
-					return e.JSON(200, map[string]any{"connect_url": "https://creators.spotify.com/dash/submit"})
+					return e.JSON(200, map[string]any{"url": nil})
 				}
 			case "youtube":
-				shareUrl := podcast.GetString("youtube_share_url")
+				shareUrl := podcast.GetString("youtube_url")
 				if shareUrl != "" {
-					return e.JSON(200, map[string]any{"share_url": shareUrl})
+					return e.JSON(200, map[string]any{"url": shareUrl})
 				} else {
-					return e.JSON(200, map[string]any{"connect_url": "https://music.youtube.com/library/podcasts"})
+					return e.JSON(200, map[string]any{"url": nil})
 				}
 			}
 
-			return e.NotFoundError("Platform not supported", nil)
+			return e.NotFoundError("platform not supported", nil)
 		}).Bind(apis.RequireAuth())
 
 		return se.Next()

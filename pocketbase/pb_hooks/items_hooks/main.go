@@ -18,9 +18,10 @@ import (
 
 func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordAfterCreateSuccess(collections.Items).BindFunc(func(e *core.RecordEvent) error {
-		url := e.Record.GetString("url")
-		user := e.Record.GetString("user")
-		podcastId := e.Record.GetString("podcast")
+		itemRecord := e.Record
+		url := itemRecord.GetString("url")
+		user := itemRecord.GetString("user")
+		podcastId := itemRecord.GetString("podcast")
 
 		routine.FireAndForget(func() {
 			result, err := goutubedl.New(context.Background(), url, goutubedl.Options{
@@ -51,7 +52,6 @@ func Init(app *pocketbase.PocketBase) error {
 			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 				err = os.Mkdir(outputDir, 0755)
 				if err != nil {
-					e.App.Logger().Error("Items Hooks: failed to create output directory: " + err.Error())
 					return
 				}
 			}
@@ -59,7 +59,6 @@ func Init(app *pocketbase.PocketBase) error {
 			outputPath := outputDir + "/" + videoId + ".mp3"
 			f, err := os.Create(outputPath)
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to create output file: " + err.Error())
 				return
 			}
 			defer f.Close()
@@ -67,13 +66,11 @@ func Init(app *pocketbase.PocketBase) error {
 
 			downloadsCollection, err := e.App.FindCollectionByNameOrId(collections.Downloads)
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to find downloads collection: " + err.Error())
 				return
 			}
 
 			audioFile, err := filesystem.NewFileFromPath(outputPath)
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to create file from path: " + err.Error())
 				return
 			}
 
@@ -87,18 +84,15 @@ func Init(app *pocketbase.PocketBase) error {
 			downloadRecord.Set("podcast", podcastId)
 			downloadRecord.Set("item", e.Record.Id)
 			if err := e.App.Save(downloadRecord); err != nil {
-				e.App.Logger().Error("Items Hooks: failed to save new download record: " + err.Error())
 				return
 			}
 
-			e.Record.Set("download", downloadRecord.Id)
-			if err := e.App.Save(e.Record); err != nil {
-				e.App.Logger().Error("Items Hooks: failed to save item record: " + err.Error())
+			itemRecord.Set("download", downloadRecord.Id)
+			if err := e.App.Save(itemRecord); err != nil {
 				return
 			}
 
 			if err := os.Remove(outputPath); err != nil {
-				e.App.Logger().Error("Items Hooks: failed to remove temporary output file: " + err.Error())
 				return
 			}
 
@@ -112,7 +106,6 @@ func Init(app *pocketbase.PocketBase) error {
 
 			fsys, err := app.NewFilesystem()
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to open podcast filesystem: " + err.Error())
 				return
 			}
 			defer fsys.Close()
@@ -127,42 +120,36 @@ func Init(app *pocketbase.PocketBase) error {
 			content := new(bytes.Buffer)
 			_, err = io.Copy(content, r)
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to copy XML content: " + err.Error())
 				return
 			}
 
 			currentXmlFile, err := fsys.GetReuploadableFile(xmlFileKey, true)
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to get reuploadable file: " + err.Error())
 				return
 			}
 
 			podcast, err := rss_utils.ParseXML(content.String())
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to parse podcast XML: " + err.Error())
 				return
 			}
 
 			audioUrl := files.GetFileURL(downloadRecord.BaseFilesPath(), downloadRecord.GetString("file"))
-			rss_utils.AddItemToPodcast(&podcast, videoTitle, audioUrl, description, downloadRecord.Id, audioUrl, podcast.IOwner.Name, podcast.IOwner.Email, int64(downloadRecord.GetInt("duration")))
+			rss_utils.AddItemToPodcast(&podcast, videoTitle, audioUrl, description, downloadRecord.Id, audioUrl, podcast.IOwner.Name, podcast.IOwner.Email, int64(duration))
 
 			xml, err := rss_utils.GenerateXML(&podcast)
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to generate podcast XML: " + err.Error())
 				return
 			}
 
 			xmlFile, err := filesystem.NewFileFromBytes([]byte(xml), podcastRecord.Id+".rss")
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to create podcast XML file: " + err.Error())
 				return
 			}
 
 			xmlFile.Name = currentXmlFile.Name
+
 			podcastRecord.Set("file", xmlFile)
-			
 			if err := e.App.Save(podcastRecord); err != nil {
-				e.App.Logger().Error("Items Hooks: failed to save record: " + err.Error())
 				return
 			}
 		})
@@ -184,7 +171,6 @@ func Init(app *pocketbase.PocketBase) error {
 
 		fsys, err := app.NewFilesystem()
 		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to open podcast filesystem: " + err.Error())
 			return e.Next()
 		}
 		defer fsys.Close()
@@ -199,13 +185,11 @@ func Init(app *pocketbase.PocketBase) error {
 		content := new(bytes.Buffer)
 		_, err = io.Copy(content, r)
 		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to copy XML content: " + err.Error())
 			return e.Next()
 		}
 
 		podcast, err := rss_utils.ParseXML(content.String())
 		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to parse podcast XML: " + err.Error())
 			return e.Next()
 		}
 
@@ -213,19 +197,16 @@ func Init(app *pocketbase.PocketBase) error {
 
 		xml, err := rss_utils.GenerateXML(&podcast)
 		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to generate podcast XML: " + err.Error())
 			return e.Next()
 		}
 
 		file, err := fsys.GetReuploadableFile(xmlFileKey, true)
 		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to get reuploadable file: " + err.Error())
 			return e.Next()
 		}
 
 		xmlFile, err := filesystem.NewFileFromBytes([]byte(xml), file.OriginalName)
 		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to create podcast XML file: " + err.Error())
 			return e.Next()
 		}
 
@@ -233,7 +214,6 @@ func Init(app *pocketbase.PocketBase) error {
 
 		podcastRecord.Set("file", xmlFile)
 		if err := e.App.Save(podcastRecord); err != nil {
-			e.App.Logger().Error("Items Hooks: failed to save record: " + err.Error())
 			return e.Next()
 		}
 

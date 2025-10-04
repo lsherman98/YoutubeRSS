@@ -18,6 +18,12 @@ export function handleError(error: Error) {
   })
 }
 
+export function formatDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
 export function getUserId(msg: string = 'No logged in user detected.'): string | null {
   const user = pb.authStore.record;
   if (!user?.id) {
