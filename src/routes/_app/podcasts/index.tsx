@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreatePodcast, useDeletePodcast } from "@/lib/api/mutations";
-import { getUserId } from "@/lib/utils";
+import { getUserId, getUserName } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, Globe, ImageIcon, Type, MoreHorizontal, Trash, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -61,10 +61,10 @@ function RouteComponent() {
   const form = useForm<z.infer<typeof createPodcastFormSchema>>({
     resolver: zodResolver(createPodcastFormSchema),
     defaultValues: {
-      title: "Levi's RSS Feed",
-      description: "This is my podcast description.",
+      title: getUserName() ? `${getUserName()}'s Podcast` : "My Podcast",
+      description: "Private podcast feed powered by ytrss.xyz",
       image: undefined,
-      website: "",
+      website: "www.ytrss.xyz",
     },
   });
 

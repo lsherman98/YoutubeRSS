@@ -27,6 +27,11 @@ export function getUserId(msg: string = 'No logged in user detected.'): string |
   return user.id;
 }
 
+export function getUserName(): string {
+  const user = pb.authStore.record;
+  return user?.name;
+}
+
 export const formatFileSize = (size: number) => {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;

@@ -24,6 +24,20 @@ func Init(app *pocketbase.PocketBase) error {
 		}
 
 		image := e.Record.GetString("image")
+		if image == "" {
+			file, err := filesystem.NewFileFromPath("./static/rss.png")
+			if err != nil {
+				e.App.Logger().Error("Podcast Hooks: failed to open default image: " + err.Error())
+				return e.Next()
+			}
+
+			e.Record.Set("image", file)
+
+			if err := e.App.Save(e.Record); err != nil {
+				e.App.Logger().Error("Podcast Hooks: failed to save record: " + err.Error())
+				return e.Next()
+			}
+		}
 
 		podcast := rss_utils.NewPodcast(
 			title,
@@ -66,7 +80,6 @@ func Init(app *pocketbase.PocketBase) error {
 
 		fsys, err := app.NewFilesystem()
 		if err != nil {
-			e.App.Logger().Error("Podcast Hooks: failed to open podcast filesystem: " + err.Error())
 			return e.Next()
 		}
 		defer fsys.Close()

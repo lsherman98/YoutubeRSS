@@ -23,7 +23,7 @@ import {
 import { useDeletePodcastItem } from "@/lib/api/mutations";
 import { getPodcastShareUrl } from "@/lib/api/api";
 import { toast } from "sonner";
-import { PodcastInstructionsModal } from "@/components/podcast-instructions-modal";
+import { PodcastInstructionsModal } from "@/components/instructions/podcast-instructions-modal";
 import { Info } from "lucide-react";
 import { useUpdatePodcast } from "@/lib/api/mutations";
 import { Input } from "@/components/ui/input";
@@ -196,6 +196,15 @@ function RouteComponent() {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
+                          handleSubscribe("pocketcasts");
+                        }}
+                        platform="pocketcasts"
+                        label="Listen on Pocket Casts"
+                      />
+                      <PodcastButton
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
                           handleSubscribe("apple");
                         }}
                         platform="apple"
@@ -218,15 +227,6 @@ function RouteComponent() {
                         }}
                         platform="youtube"
                         label="Listen on YouTube"
-                      />
-                      <PodcastButton
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleSubscribe("pocketcasts");
-                        }}
-                        platform="pocketcasts"
-                        label="Listen on Pocket Casts"
                       />
                       <PodcastInstructionsModal
                         trigger={
