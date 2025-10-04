@@ -50,8 +50,12 @@ func Init(app *pocketbase.PocketBase) error {
 				if url != "" {
 					return e.JSON(200, map[string]any{"url": url})
 				} else {
-					fileName := podcast.GetString("file")
-					podcastURL := files.GetFileURL(podcast.BaseFilesPath(), fileName)
+					fileClient, err := files.NewFileClient(e.App, podcast, "file")
+					if err != nil {
+						return e.Next()
+					}
+
+					podcastURL := fileClient.GetFileURL(podcast, "file")
 					addFeedReq := PocketCastsAddFeedReq{
 						Url:          podcastURL,
 						PublicOption: "no",

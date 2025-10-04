@@ -21,7 +21,7 @@ const FormSchema = z.object({
     .min(1, { message: "At least one URL is required." }),
 });
 
-export function YoutubeUrlInput({ podcastId }: { podcastId: string }) {
+export function YoutubeUrlInput({ podcastId, onSuccess }: { podcastId: string; onSuccess: () => void }) {
   const addYoutubeUrlsMutation = useAddYoutubeUrls();
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -38,10 +38,15 @@ export function YoutubeUrlInput({ podcastId }: { podcastId: string }) {
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
     const urls = data.youtubeUrls.filter((item) => item.url.trim() !== "").map((item) => item.url.trim());
-    addYoutubeUrlsMutation.mutate({
-      urls,
-      podcastId,
-    });
+    addYoutubeUrlsMutation.mutate(
+      {
+        urls,
+        podcastId,
+      },
+      {
+        onSuccess,
+      }
+    );
     form.reset();
   }
 

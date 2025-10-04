@@ -1,9 +1,6 @@
 package podcast_hooks
 
 import (
-	"bytes"
-	"io"
-
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/lsherman98/yt-rss/pocketbase/files"
 	"github.com/lsherman98/yt-rss/pocketbase/rss_utils"
@@ -14,50 +11,56 @@ import (
 
 func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordCreateRequest(collections.Podcasts).BindFunc(func(e *core.RecordRequestEvent) error {
-		title := e.Record.GetString("title")
-		description := e.Record.GetString("description")
-		website := e.Record.GetString("website")
+		podcast := e.Record
+		title := podcast.GetString("title")
+		description := podcast.GetString("description")
+		website := podcast.GetString("website")
 		username := e.Auth.GetString("name")
 		email := e.Auth.Email()
 
-		if err := e.App.Save(e.Record); err != nil {
+		if err := e.App.Save(podcast); err != nil {
 			return e.Next()
 		}
 
-		image := e.Record.GetString("image")
+		image := podcast.GetString("image")
 		if image == "" {
-			file, err := filesystem.NewFileFromPath("./static/rss.png")
+			file, err := filesystem.NewFileFromPath("./pb_public/static/rss.png")
 			if err != nil {
 				return e.Next()
 			}
 
-			e.Record.Set("image", file)
-			if err := e.App.Save(e.Record); err != nil {
+			podcast.Set("image", file)
+			if err := e.App.Save(podcast); err != nil {
 				return e.Next()
 			}
 		}
 
-		podcast := rss_utils.NewPodcast(
+		fileClient, err := files.NewFileClient(e.App, podcast, "file")
+		if err != nil {
+			return e.Next()
+		}
+
+		p := rss_utils.NewPodcast(
 			title,
 			website,
 			description,
 			username,
 			email,
-			files.GetFileURL(e.Record.BaseFilesPath(), image),
+			fileClient.GetFileURL(podcast, "image"),
 		)
 
-		xml, err := rss_utils.GenerateXML(&podcast)
+		xml, err := rss_utils.GenerateXML(&p)
 		if err != nil {
 			return e.Next()
 		}
 
-		f, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".rss")
+		xmlFile, err := fileClient.NewXMLFile(xml, podcast.Id)
 		if err != nil {
 			return e.Next()
 		}
 
-		e.Record.Set("file", f)
-		if err := e.App.Save(e.Record); err != nil {
+		podcast.Set("file", xmlFile)
+		if err := e.App.Save(podcast); err != nil {
 			return e.Next()
 		}
 
@@ -65,64 +68,48 @@ func Init(app *pocketbase.PocketBase) error {
 	})
 
 	app.OnRecordAfterUpdateSuccess(collections.Podcasts).BindFunc(func(e *core.RecordEvent) error {
-		title := e.Record.GetString("title")
-		description := e.Record.GetString("description")
-		website := e.Record.GetString("website")
-		image := e.Record.GetString("image")
-		xmlFileKey := e.Record.BaseFilesPath() + "/" + e.Record.GetString("file")
+		podcast := e.Record
+		title := podcast.GetString("title")
+		description := podcast.GetString("description")
+		website := podcast.GetString("website")
 
-		fsys, err := app.NewFilesystem()
-		if err != nil {
-			return e.Next()
-		}
-		defer fsys.Close()
-
-		r, err := fsys.GetReader(xmlFileKey)
-		if err != nil {
-			return e.Next()
-		}
-		defer r.Close()
-
-		content := new(bytes.Buffer)
-		_, err = io.Copy(content, r)
+		fileClient, err := files.NewFileClient(e.App, podcast, "file")
 		if err != nil {
 			return e.Next()
 		}
 
-		podcast, err := rss_utils.ParseXML(content.String())
+		content, err := fileClient.GetXMLFile()
 		if err != nil {
 			return e.Next()
 		}
 
-		imageUrl := files.GetFileURL(e.Record.BaseFilesPath(), image)
-		if podcast.Title == title && podcast.Link == website && podcast.Description == description && podcast.Image.URL == imageUrl {
-			return e.Next()
-		}
-
-		podcast.Title = title
-		podcast.Link = website
-		podcast.Description = description
-		podcast.AddImage(imageUrl)
-
-		xml, err := rss_utils.GenerateXML(&podcast)
+		p, err := rss_utils.ParseXML(content.String())
 		if err != nil {
 			return e.Next()
 		}
 
-		xmlFile, err := filesystem.NewFileFromBytes([]byte(xml), e.Record.Id+".rss")
+		imageUrl := fileClient.GetFileURL(podcast, "image")
+		if p.Title == title && p.Link == website && p.Description == description && p.Image.URL == imageUrl {
+			return e.Next()
+		}
+
+		p.Title = title
+		p.Link = website
+		p.Description = description
+		p.AddImage(imageUrl)
+
+		xml, err := rss_utils.GenerateXML(&p)
 		if err != nil {
 			return e.Next()
 		}
 
-		currentXmlFile, err := fsys.GetReuploadableFile(xmlFileKey, true)
+		xmlFile, err := fileClient.NewXMLFile(xml, podcast.Id)
 		if err != nil {
 			return e.Next()
 		}
 
-		xmlFile.Name = currentXmlFile.Name
-		e.Record.Set("file", xmlFile)
-
-		if err := e.App.Save(e.Record); err != nil {
+		podcast.Set("file", xmlFile)
+		if err := e.App.Save(podcast); err != nil {
 			return e.Next()
 		}
 

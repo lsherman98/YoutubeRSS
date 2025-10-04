@@ -27,15 +27,15 @@ func NewPodcast(title, link, description, authorName, email, image string) podca
 	return p
 }
 
-func AddItemToPodcast(p *podcast.Podcast, title, link, description, guid, enclosure, authorName, email string, length int64) {
+func AddItemToPodcast(p *podcast.Podcast, title, url, description, guid, enclosure string, length int64) {
 	pubDate := time.Now()
 	item := podcast.Item{
 		Title:       title,
-		Link:        link,
+		Link:        url,
 		Description: description,
 		PubDate:     &pubDate,
 		GUID:        guid,
-		Author:      &podcast.Author{Name: authorName, Email: email},
+		Author:      &podcast.Author{Name: p.IOwner.Name, Email: p.IOwner.Email},
 		Enclosure:   &podcast.Enclosure{URL: enclosure, TypeFormatted: podcast.MP3.String(), Type: podcast.MP3, Length: length},
 	}
 	p.AddItem(item)
@@ -65,34 +65,28 @@ func ParseXML(data string) (podcast.Podcast, error) {
 		return podcast.Podcast{}, err
 	}
 
-	title := feed.Title
-	link := feed.Link
-	description := feed.Description
-	image := feed.Image.URL
 	parts := strings.Split(feed.ManagingEditor, " (")
 	email := parts[0]
 	name := strings.TrimSuffix(parts[1], ")")
 
-	var pubDate time.Time
+	now := time.Now()
+	pubDate := time.Now()
 	if feed.PubDate != "" {
 		pubDate, _ = time.Parse(time.RFC1123Z, feed.PubDate)
-	} else {
-		pubDate = time.Now()
-	}
-	now := time.Now()
+	} 
 
 	p := podcast.New(
-		title,
-		link,
-		description,
+		feed.Title,
+		feed.Link,
+		feed.Description,
 		&pubDate,
 		&now,
 	)
 	p.AddAuthor(name, email)
 	p.IOwner = &podcast.Author{Name: name, Email: email}
-	p.AddImage(image)
+	p.AddImage(feed.Image.URL)
 	p.AddCategory("Technology", []string{})
-	p.AddAtomLink(link)
+	p.AddAtomLink(feed.Link)
 
 	for _, item := range feed.Items {
 		var length int64 = 0
@@ -102,7 +96,7 @@ func ParseXML(data string) (podcast.Podcast, error) {
 			}
 		}
 
-		AddItemToPodcast(&p, item.Title, item.Link, item.Description, item.GUID.Value, item.Enclosure.URL, name, email, length)
+		AddItemToPodcast(&p, item.Title, item.Link, item.Description, item.GUID.Value, item.Enclosure.URL, length)
 	}
 
 	return p, nil

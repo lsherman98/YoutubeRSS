@@ -34,7 +34,7 @@ export function AddItemDialog({ podcastId }: AddItemDialogProps) {
           </DialogTitle>
           <DialogDescription>Add one or more YouTube video URLs to this podcast.</DialogDescription>
         </DialogHeader>
-        {podcastId && <YoutubeUrlInput podcastId={podcastId} />}
+        {podcastId && <YoutubeUrlInput podcastId={podcastId} onSuccess={() => setIsAddItemDialogOpen(false)} />}
       </DialogContent>
     </Dialog>
   );

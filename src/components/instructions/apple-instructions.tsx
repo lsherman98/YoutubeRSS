@@ -79,27 +79,27 @@ export function AppleInstructions({ podcastUrl, podcastId }: { podcastUrl: strin
           Set <strong>Update Frequency</strong> to <strong>No Set Schedule</strong>.
         </InstructionStep>
 
-        <InstructionScreenshot src="../../public/screenshots/apple/frequency.png" />
+        <InstructionScreenshot src="/static/frequency.png" />
 
         <InstructionStep number={5}>
           Set <strong>Content Rights</strong> to <strong>This show does not contain third-party content</strong>.
         </InstructionStep>
 
-        <InstructionScreenshot src="../../public/screenshots/apple/content-rights.png" />
+        <InstructionScreenshot src="/static/content-rights.png" />
 
         <InstructionStep number={6}>
           In the <strong>Availability</strong> tab, go to the <strong>Distribution</strong> section and uncheck{" "}
           <strong>Make this show available for distribution</strong>. <i>(Optional)</i>
         </InstructionStep>
 
-        <InstructionScreenshot src="../../public/screenshots/apple/distribution.png" />
+        <InstructionScreenshot src="/static/distribution.png" />
 
         <InstructionStep number={7}>
           Scroll down to <strong>Show Claiming</strong> and check <strong>Don't allow show to be claimed</strong>.
           <i>(Optional)</i>
         </InstructionStep>
 
-        <InstructionScreenshot src="../../public/screenshots/apple/claiming.png" />
+        <InstructionScreenshot src="/static/claiming.png" />
 
         <InstructionStep number={8}>
           Click <strong>Save</strong> and then <strong>Publish</strong>. Your podcast is now available on Apple

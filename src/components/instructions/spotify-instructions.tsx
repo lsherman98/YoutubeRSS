@@ -43,7 +43,7 @@ export function SpotifyInstructions({ podcastUrl, podcastId }: { podcastUrl: str
           . Log in if needed.
         </InstructionStep>
         <FeedURL url={podcastUrl} className="mt-6" />
-        <InstructionScreenshot src="../../public/screenshots/spotify/submit.png" />
+        <InstructionScreenshot src="/static/submit.png" />
         <InstructionStep number={2}>Follow the instructions to verify ownership of the podcast.</InstructionStep>
         <InstructionStep number={3}>Once finished, save the Spotify podcast link below:</InstructionStep>
         <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">

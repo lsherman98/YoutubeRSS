@@ -1,8 +1,35 @@
 package files
 
-import "os"
+import (
+	"bytes"
+	"io"
+	"os"
 
-func GetFileURL(basePath, fileName string) string {
+	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/filesystem"
+)
+
+type FileClient struct {
+	fsys    *filesystem.System
+	app     core.App
+	fileKey string
+}
+
+func NewFileClient(app core.App, record *core.Record, field string) (*FileClient, error) {
+	fsys, err := app.NewFilesystem()
+	if err != nil {
+		return nil, err
+	}
+
+	fileKey := record.BaseFilesPath() + "/" + record.GetString(field)
+	return &FileClient{
+		fsys:    fsys,
+		app:     app,
+		fileKey: fileKey,
+	}, nil
+}
+
+func (c *FileClient) GetFileURL(record *core.Record, field string) string {
 	var domain string
 	if os.Getenv("DEV") == "true" {
 		domain = "localhost:8090"
@@ -10,5 +37,43 @@ func GetFileURL(basePath, fileName string) string {
 		domain = "rss.levisherman.xyz"
 	}
 
-	return "https://" + domain + "/api/files/" + basePath + "/" + fileName
+	basePath := record.BaseFilesPath()
+	filename := record.GetString(field)
+	return "https://" + domain + "/api/files/" + basePath + "/" + filename
+}
+
+func (c *FileClient) GetXMLFile() (*bytes.Buffer, error) {
+	fsys, err := c.app.NewFilesystem()
+	if err != nil {
+		return nil, err
+	}
+	defer fsys.Close()
+
+	r, err := fsys.GetReader(c.fileKey)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	content := new(bytes.Buffer)
+	_, err = io.Copy(content, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return content, nil
+}
+
+func (c *FileClient) NewXMLFile(xml, fileName string) (*filesystem.File, error) {
+	file, err := filesystem.NewFileFromBytes([]byte(xml), fileName+".rss")
+	if err != nil {
+		return nil, err
+	}
+
+	currentFile, err := c.fsys.GetReuploadableFile(c.fileKey, true)
+	if err == nil {
+		file.Name = currentFile.Name
+	}
+
+	return file, nil
 }
