@@ -8,9 +8,10 @@ interface PodcastHeaderProps {
   podcast: PodcastsResponse;
   podcastUrl: string;
   podcastId: string;
+  disabled?: boolean;
 }
 
-export function PodcastHeader({ podcast, podcastUrl, podcastId }: PodcastHeaderProps) {
+export function PodcastHeader({ podcast, podcastUrl, podcastId, disabled = false }: PodcastHeaderProps) {
   const imageUrl = pb.files.getURL(podcast, podcast?.image);
 
   return (
@@ -36,7 +37,7 @@ export function PodcastHeader({ podcast, podcastUrl, podcastId }: PodcastHeaderP
               )}
               {podcastUrl && (
                 <div className="flex flex-col items-start gap-2">
-                  <PodcastSubscribeButtons podcastUrl={podcastUrl} podcastId={podcastId} />
+                  <PodcastSubscribeButtons podcastUrl={podcastUrl} podcastId={podcastId} disabled={disabled} />
                 </div>
               )}
             </div>

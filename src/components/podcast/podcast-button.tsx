@@ -10,9 +10,10 @@ interface PodcastButtonProps {
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
   platform: "apple" | "spotify" | "youtube" | "pocketcasts" | "rssFeed";
   label: string;
+  disabled?: boolean;
 }
 
-export function PodcastButton({ href, onClick, platform, label }: PodcastButtonProps) {
+export function PodcastButton({ href, onClick, platform, label, disabled = false }: PodcastButtonProps) {
   const buttonClasses = {
     apple: "w-[165px]",
     spotify: "w-[106px]",
@@ -36,7 +37,7 @@ export function PodcastButton({ href, onClick, platform, label }: PodcastButtonP
   return (
     <a
       href={href}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       className={`
         inline-block h-[40px] ${widthClass}
         bg-white dark:bg-black
@@ -48,6 +49,7 @@ export function PodcastButton({ href, onClick, platform, label }: PodcastButtonP
         indent-[-9000px]
         transition-opacity hover:opacity-80
         cursor-pointer
+        ${disabled ? "pointer-events-none opacity-50" : ""}
       `}
     >
       {label}
@@ -58,9 +60,10 @@ export function PodcastButton({ href, onClick, platform, label }: PodcastButtonP
 interface PodcastSubscribeButtonsProps {
   podcastUrl: string;
   podcastId: string;
+  disabled?: boolean;
 }
 
-export function PodcastSubscribeButtons({ podcastUrl, podcastId }: PodcastSubscribeButtonsProps) {
+export function PodcastSubscribeButtons({ podcastUrl, podcastId, disabled = false }: PodcastSubscribeButtonsProps) {
   const [instructionsModalOpen, setInstructionsModalOpen] = useState(false);
   const [instructionsTab, setInstructionsTab] = useState<"apple" | "spotify" | "youtube">("apple");
 
@@ -87,6 +90,7 @@ export function PodcastSubscribeButtons({ podcastUrl, podcastId }: PodcastSubscr
         }}
         platform="rssFeed"
         label="get RSS Feed"
+        disabled={disabled}
       />
       <PodcastButton
         href="#"
@@ -96,6 +100,7 @@ export function PodcastSubscribeButtons({ podcastUrl, podcastId }: PodcastSubscr
         }}
         platform="pocketcasts"
         label="Listen on Pocket Casts"
+        disabled={disabled}
       />
       <PodcastButton
         href="#"
@@ -105,6 +110,7 @@ export function PodcastSubscribeButtons({ podcastUrl, podcastId }: PodcastSubscr
         }}
         platform="apple"
         label="Listen on Apple Podcasts"
+        disabled={disabled}
       />
       <PodcastButton
         href={"#"}
@@ -114,6 +120,7 @@ export function PodcastSubscribeButtons({ podcastUrl, podcastId }: PodcastSubscr
         }}
         platform="spotify"
         label="Listen on Spotify"
+        disabled={disabled}
       />
       <PodcastButton
         href={"#"}
@@ -123,6 +130,7 @@ export function PodcastSubscribeButtons({ podcastUrl, podcastId }: PodcastSubscr
         }}
         platform="youtube"
         label="Listen on YouTube"
+        disabled={disabled}
       />
       <SubscribeInstructions
         trigger={
@@ -130,6 +138,7 @@ export function PodcastSubscribeButtons({ podcastUrl, podcastId }: PodcastSubscr
             variant="default"
             size="default"
             className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+            disabled={disabled}
           >
             <Info className="h-5 w-5" />
           </Button>

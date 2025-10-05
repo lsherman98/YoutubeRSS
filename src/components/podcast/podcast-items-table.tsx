@@ -9,8 +9,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeletePodcastItem } from "@/lib/api/mutations";
 import { formatDuration } from "@/lib/utils";
-import type { ItemsResponse } from "@/lib/pocketbase-types";
+import type { DownloadsResponse, ItemsResponse } from "@/lib/pocketbase-types";
 import type { ExpandDownload } from "@/lib/api/api";
+import { pb } from "@/lib/pocketbase";
 
 interface PodcastItemsTableProps {
   podcastItems: ItemsResponse<ExpandDownload>[];
@@ -18,6 +19,11 @@ interface PodcastItemsTableProps {
 
 export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
   const deleteItemMutation = useDeletePodcastItem();
+
+  const handleDownload = (download: DownloadsResponse) => {
+    const fileUrl = pb.files.getURL(download, download.file, { download: true });
+    window.open(fileUrl, "_blank");
+  };
 
   return (
     <Table>
@@ -71,6 +77,7 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
                       <DropdownMenuItem variant="destructive" onClick={() => deleteItemMutation.mutate(item.id)}>
                         Delete
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload(item.expand.download)}>Download</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

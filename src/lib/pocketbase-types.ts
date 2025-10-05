@@ -101,6 +101,7 @@ export type DownloadsRecord = {
 	id: string
 	item?: RecordIdString
 	podcast?: RecordIdString
+	size?: number
 	title?: string
 	updated?: IsoDateString
 	user?: RecordIdString

@@ -17,7 +17,14 @@ function RouteComponent() {
 
   return (
     <div className="w-full">
-      {podcast && <PodcastHeader podcast={podcast} podcastUrl={podcastUrl} podcastId={id} />}
+      {podcast && (
+        <PodcastHeader
+          podcast={podcast}
+          podcastUrl={podcastUrl}
+          podcastId={id}
+          disabled={!podcastItems || podcastItems.length === 0}
+        />
+      )}
       <PodcastItemsTable podcastItems={podcastItems || []} />
     </div>
   );
