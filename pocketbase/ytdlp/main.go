@@ -2,7 +2,9 @@ package ytdlp
 
 import (
 	"context"
+	"fmt"
 	"io"
+	u "net/url"
 	"os"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -10,11 +12,37 @@ import (
 	"github.com/wader/goutubedl"
 )
 
-const proxyUrl = "http://2.tcp.ngrok.io:11281"
+type Client struct {
+	ProxyHost string
+	ProxyAuth string
+	ProxyURL  string
+}
 
-func Download(url string, record *core.Record) (*goutubedl.DownloadResult, string, error) {
+func New() *Client {
+	dev := os.Getenv("DEV")
+	if dev == "true" {
+		return &Client{
+			ProxyURL: os.Getenv("NGROK_PROXY"),
+		}
+	}
+
+	host := os.Getenv("IP_ROYAL_PROXY_HOST")
+	auth := os.Getenv("IP_ROYAL_PROXY_AUTH")
+	url, err := u.Parse(fmt.Sprintf("http://%s@%s", auth, host))
+	if err != nil {
+		return nil
+	}
+
+	return &Client{
+		ProxyHost: host,
+		ProxyAuth: auth,
+		ProxyURL:  url.String(),
+	}
+}
+
+func (c *Client) Download(url string, record *core.Record) (*goutubedl.DownloadResult, string, error) {
 	result, err := goutubedl.New(context.Background(), url, goutubedl.Options{
-		ProxyUrl: proxyUrl,
+		ProxyUrl: c.ProxyURL,
 	})
 	if err != nil {
 		return nil, "", err
@@ -55,5 +83,6 @@ func Download(url string, record *core.Record) (*goutubedl.DownloadResult, strin
 	}
 
 	record.Set("file", audio)
+	record.Set("size", audio.Size)
 	return download, path, nil
 }

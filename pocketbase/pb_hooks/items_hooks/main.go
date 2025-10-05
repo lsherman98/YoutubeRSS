@@ -32,6 +32,12 @@ func Init(app *pocketbase.PocketBase) error {
 				return
 			}
 
+			ytdlp := ytdlp.New()
+			if ytdlp == nil {
+				e.App.Logger().Error("Items Hooks: failed to create ytdlp client")
+				return
+			}
+
 			result, path, err := ytdlp.Download(url, download)
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to download audio: " + err.Error())
