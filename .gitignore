@@ -39,3 +39,4 @@ pocketbase/.env
 pocketbase/server
 pocketbase/pocketbase
 pocketbase/output
+pocketbase/deploy.sh

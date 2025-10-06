@@ -99,7 +99,7 @@ const UserCreateForm = () => {
         const password = form.password.value;
 
         const data = {
-          username,
+          name: username,
           email,
           password,
           passwordConfirm: password,

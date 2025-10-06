@@ -19,8 +19,8 @@ type Client struct {
 }
 
 func New() *Client {
-	dev := os.Getenv("DEV")
-	if dev == "true" {
+	proxy := os.Getenv("PROXY")
+	if proxy == "ngrok" {
 		return &Client{
 			ProxyURL: os.Getenv("NGROK_PROXY"),
 		}

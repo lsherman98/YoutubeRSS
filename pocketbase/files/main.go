@@ -38,7 +38,7 @@ func (c *FileClient) GetFileURL(record *core.Record, field string) string {
 	if os.Getenv("DEV") == "true" {
 		domain = "localhost:8090"
 	} else {
-		domain = "rss.levisherman.xyz"
+		domain = "ytrss.xyz"
 	}
 
 	basePath := record.BaseFilesPath()
