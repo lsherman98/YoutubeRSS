@@ -5,4 +5,5 @@ const (
     Items = "items"
     Users = "users"
     Podcasts = "podcasts"
+    Uploads = "uploads"
 )

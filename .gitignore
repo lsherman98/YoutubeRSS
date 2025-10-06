@@ -38,3 +38,4 @@ pocketbase/pocketbase
 pocketbase/.env
 pocketbase/server
 pocketbase/pocketbase
+pocketbase/output

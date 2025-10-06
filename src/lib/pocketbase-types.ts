@@ -14,6 +14,7 @@ export enum Collections {
 	Downloads = "downloads",
 	Items = "items",
 	Podcasts = "podcasts",
+	Uploads = "uploads",
 	Users = "users",
 }
 
@@ -94,25 +95,31 @@ export type SuperusersRecord = {
 }
 
 export type DownloadsRecord = {
-	channel?: string
+	channel: string
 	created?: IsoDateString
 	duration?: number
-	file?: string
+	file: string
 	id: string
-	item?: RecordIdString
-	podcast?: RecordIdString
-	size?: number
-	title?: string
+	item: RecordIdString
+	podcast: RecordIdString
+	size: number
+	title: string
 	updated?: IsoDateString
-	user?: RecordIdString
+	user: RecordIdString
 }
 
+export enum ItemsTypeOptions {
+	"upload" = "upload",
+	"url" = "url",
+}
 export type ItemsRecord = {
 	created?: IsoDateString
 	download?: RecordIdString
 	id: string
 	podcast?: RecordIdString
+	type?: ItemsTypeOptions
 	updated?: IsoDateString
+	upload?: RecordIdString
 	url?: string
 	user?: RecordIdString
 }
@@ -132,6 +139,19 @@ export type PodcastsRecord = {
 	user?: RecordIdString
 	website?: string
 	youtube_url?: string
+}
+
+export type UploadsRecord = {
+	created?: IsoDateString
+	duration?: number
+	file?: string
+	id: string
+	item?: RecordIdString
+	podcast?: RecordIdString
+	size?: number
+	title?: string
+	updated?: IsoDateString
+	user?: RecordIdString
 }
 
 export type UsersRecord = {
@@ -155,6 +175,7 @@ export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> &
 export type DownloadsResponse<Texpand = unknown> = Required<DownloadsRecord> & BaseSystemFields<Texpand>
 export type ItemsResponse<Texpand = unknown> = Required<ItemsRecord> & BaseSystemFields<Texpand>
 export type PodcastsResponse<Texpand = unknown> = Required<PodcastsRecord> & BaseSystemFields<Texpand>
+export type UploadsResponse<Texpand = unknown> = Required<UploadsRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 
 // Types containing all Records and Responses, useful for creating typing helper functions
@@ -168,6 +189,7 @@ export type CollectionRecords = {
 	downloads: DownloadsRecord
 	items: ItemsRecord
 	podcasts: PodcastsRecord
+	uploads: UploadsRecord
 	users: UsersRecord
 }
 
@@ -180,6 +202,7 @@ export type CollectionResponses = {
 	downloads: DownloadsResponse
 	items: ItemsResponse
 	podcasts: PodcastsResponse
+	uploads: UploadsResponse
 	users: UsersResponse
 }
 
@@ -195,5 +218,6 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'downloads'): RecordService<DownloadsResponse>
 	collection(idOrName: 'items'): RecordService<ItemsResponse>
 	collection(idOrName: 'podcasts'): RecordService<PodcastsResponse>
+	collection(idOrName: 'uploads'): RecordService<UploadsResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>
 }

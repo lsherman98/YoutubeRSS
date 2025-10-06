@@ -29,6 +29,10 @@ func NewFileClient(app core.App, record *core.Record, field string) (*FileClient
 	}, nil
 }
 
+func (c *FileClient) Close() error {
+	return c.fsys.Close()
+}
+
 func (c *FileClient) GetFileURL(record *core.Record, field string) string {
 	var domain string
 	if os.Getenv("DEV") == "true" {
@@ -43,13 +47,7 @@ func (c *FileClient) GetFileURL(record *core.Record, field string) string {
 }
 
 func (c *FileClient) GetXMLFile() (*bytes.Buffer, error) {
-	fsys, err := c.app.NewFilesystem()
-	if err != nil {
-		return nil, err
-	}
-	defer fsys.Close()
-
-	r, err := fsys.GetReader(c.fileKey)
+	r, err := c.fsys.GetReader(c.fileKey)
 	if err != nil {
 		return nil, err
 	}

@@ -39,6 +39,7 @@ func Init(app *pocketbase.PocketBase) error {
 		if err != nil {
 			return e.Next()
 		}
+		defer fileClient.Close()
 
 		p := rss_utils.NewPodcast(
 			title,
@@ -77,6 +78,7 @@ func Init(app *pocketbase.PocketBase) error {
 		if err != nil {
 			return e.Next()
 		}
+		defer fileClient.Close()
 
 		content, err := fileClient.GetXMLFile()
 		if err != nil {

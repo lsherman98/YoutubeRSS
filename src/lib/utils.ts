@@ -14,13 +14,12 @@ export function handleError(error: Error) {
   console.error(error)
   toast.error("An error occurred", {
     description: error.message,
-
   })
 }
 
 export function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+  const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 

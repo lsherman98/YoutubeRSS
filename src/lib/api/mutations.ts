@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addYoutubeUrls, createPodcast, deletePodcast, deletePodcastItem, updatePodcast } from "./api";
+import { addAudioFiles, addYoutubeUrls, createPodcast, deletePodcast, deletePodcastItem, updatePodcast, type AudioUpload } from "./api";
 import { handleError } from "../utils";
 import type { PodcastsRecord } from "../pocketbase-types";
 
@@ -8,6 +8,18 @@ export function useAddYoutubeUrls() {
 
     return useMutation({
         mutationFn: ({ urls, podcastId }: { urls: string[], podcastId: string }) => addYoutubeUrls(urls, podcastId),
+        onError: handleError,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["items"] });
+        },
+    })
+}
+
+export function useAddAudioFiles() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ files, podcastId }: { files: AudioUpload[], podcastId: string }) => addAudioFiles(files, podcastId),
         onError: handleError,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["items"] });

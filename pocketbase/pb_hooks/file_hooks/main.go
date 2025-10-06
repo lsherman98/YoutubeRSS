@@ -9,8 +9,12 @@ import (
 func Init(app *pocketbase.PocketBase) error {
 	app.OnFileDownloadRequest().BindFunc(func(e *core.FileDownloadRequestEvent) error {
 		collection := e.Record.Collection().Name
-		if collection == collections.Podcasts {
+		switch collection {
+		case collections.Podcasts:
 			e.Response.Header().Add("Content-Disposition", "inline")
+		case collections.Downloads, collections.Uploads:
+			title := e.Record.GetString("title")
+			e.ServedName = title + ".mp3"
 		}
 		return e.Next()
 	})

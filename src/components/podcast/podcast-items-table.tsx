@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, MoreHorizontal } from "lucide-react";
+import { LoaderCircle, MoreHorizontal, Youtube, Upload } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,26 +9,31 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeletePodcastItem } from "@/lib/api/mutations";
 import { formatDuration } from "@/lib/utils";
-import type { DownloadsResponse, ItemsResponse } from "@/lib/pocketbase-types";
-import type { ExpandDownload } from "@/lib/api/api";
+import type { ItemsResponse } from "@/lib/pocketbase-types";
+import { ItemsTypeOptions } from "@/lib/pocketbase-types";
+import type { ExpandItem } from "@/lib/api/api";
 import { pb } from "@/lib/pocketbase";
 
 interface PodcastItemsTableProps {
-  podcastItems: ItemsResponse<ExpandDownload>[];
+  podcastItems: ItemsResponse<ExpandItem>[];
 }
 
 export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
   const deleteItemMutation = useDeletePodcastItem();
 
-  const handleDownload = (download: DownloadsResponse) => {
-    const fileUrl = pb.files.getURL(download, download.file, { download: true });
-    window.open(fileUrl, "_blank");
+  const handleDownload = (item: ItemsResponse<ExpandItem>) => {
+    const expandData = item.type === ItemsTypeOptions.upload ? item.expand.upload : item.expand.download;
+    if (expandData) {
+      const fileUrl = pb.files.getURL(expandData, expandData.file, { download: true, v: Date.now() });
+      window.open(fileUrl, "_blank");
+    }
   };
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>Type</TableHead>
           <TableHead>Title</TableHead>
           <TableHead>Duration</TableHead>
           <TableHead>Channel</TableHead>
@@ -40,10 +45,13 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
       <TableBody>
         {Array.isArray(podcastItems) &&
           podcastItems.map((item) => {
-            if (!item.expand.download) {
+            if (
+              (item.type === ItemsTypeOptions.url && !item.expand.download) ||
+              (item.type === ItemsTypeOptions.upload && !item.expand.upload)
+            ) {
               return (
                 <TableRow key={item.id}>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={7} className="text-center">
                     <div className="flex items-center justify-center py-2 bg-gray-100 rounded">
                       <LoaderCircle className="h-6 w-6 animate-spin mr-2" />
                       Loading...
@@ -52,17 +60,35 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
                 </TableRow>
               );
             }
+            const isUpload = item.type === ItemsTypeOptions.upload;
+            const data = isUpload ? item.expand.upload : item.expand.download;
+
             return (
               <TableRow key={item.id}>
-                <TableCell className="max-w-[350px] truncate" title={item.expand.download.title}>
-                  {item.expand.download.title}
+                <TableCell>
+                  {isUpload ? (
+                    <div title="Audio Upload">
+                      <Upload className="h-4 w-4 text-blue-600" />
+                    </div>
+                  ) : (
+                    <div title="YouTube Download">
+                      <Youtube className="h-4 w-4 text-red-600" />
+                    </div>
+                  )}
                 </TableCell>
-                <TableCell>{formatDuration(item.expand.download.duration)}</TableCell>
-                <TableCell>{item.expand.download.channel}</TableCell>
-                <TableCell className="max-w-[200px] truncate" title={item.url}>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="underline">
-                    {item.url}
-                  </a>
+                <TableCell className="max-w-[350px] truncate" title={data?.title}>
+                  {data?.title}
+                </TableCell>
+                <TableCell>{data?.duration ? formatDuration(data.duration) : "-"}</TableCell>
+                <TableCell className="max-w-[150px]" title={item.expand.download?.channel}>{isUpload ? "-" : item.expand.download?.channel}</TableCell>
+                <TableCell className="max-w-[150px] truncate" title={item.url}>
+                  {item.url ? (
+                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="underline">
+                      {item.url}
+                    </a>
+                  ) : (
+                    "-"
+                  )}
                 </TableCell>
                 <TableCell>{new Date(item.created).toLocaleDateString()}</TableCell>
                 <TableCell>
@@ -77,7 +103,7 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
                       <DropdownMenuItem variant="destructive" onClick={() => deleteItemMutation.mutate(item.id)}>
                         Delete
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDownload(item.expand.download)}>Download</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload(item)}>Download</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

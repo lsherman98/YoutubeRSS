@@ -11,6 +11,7 @@ import (
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/items_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/podcast_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/share_url_hooks"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/uploads_hooks"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -37,6 +38,10 @@ func main() {
 	}
 
 	if err := share_url_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := uploads_hooks.Init(app); err != nil {
 		log.Fatal(err)
 	}
 

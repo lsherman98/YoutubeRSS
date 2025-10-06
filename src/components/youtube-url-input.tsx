@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,36 +18,40 @@ const FormSchema = z.object({
         }),
       })
     )
-    .min(1, { message: "At least one URL is required." }),
+    .min(1, { message: "At least one URL is required." })
+    .max(50, { message: "Maximum 50 URLs allowed." }),
 });
 
-export function YoutubeUrlInput({ podcastId, onSuccess }: { podcastId: string; onSuccess: () => void }) {
+type YouTubeUrlItem = { url: string };
+
+interface YoutubeUrlInputProps {
+  podcastId: string;
+  onSuccess: () => void;
+  youtubeUrls: YouTubeUrlItem[];
+  setYoutubeUrls: (urls: YouTubeUrlItem[]) => void;
+}
+
+export function YoutubeUrlInput({ podcastId, onSuccess, youtubeUrls, setYoutubeUrls }: YoutubeUrlInputProps) {
   const addYoutubeUrlsMutation = useAddYoutubeUrls();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
-    defaultValues: {
-      youtubeUrls: [{ url: "https://www.youtube.com/watch?v=lxJG6FBo9h8&pp=0gcJCfYJAYcqIYzv" }],
+    values: {
+      youtubeUrls: youtubeUrls,
     },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "youtubeUrls",
   });
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
     const urls = data.youtubeUrls.filter((item) => item.url.trim() !== "").map((item) => item.url.trim());
     addYoutubeUrlsMutation.mutate(
+      { urls, podcastId },
       {
-        urls,
-        podcastId,
-      },
-      {
-        onSuccess,
+        onSuccess: () => {
+          setYoutubeUrls([{ url: "" }]);
+          onSuccess();
+        },
       }
     );
-    form.reset();
   }
 
   function isValidYoutubeUrl(url: string) {
@@ -55,29 +59,43 @@ export function YoutubeUrlInput({ podcastId, onSuccess }: { podcastId: string; o
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>, index: number) {
-    form.setValue(`youtubeUrls.${index}.url`, e.target.value, { shouldValidate: true });
-    if (index === fields.length - 1 && isValidYoutubeUrl(e.target.value)) {
-      append({ url: "" });
+    const newValue = e.target.value;
+    const newUrls = [...youtubeUrls];
+    newUrls[index] = { url: newValue };
+
+    if (index === youtubeUrls.length - 1 && isValidYoutubeUrl(newValue) && youtubeUrls.length < 50) {
+      newUrls.push({ url: "" });
     }
+
+    setYoutubeUrls(newUrls);
+    form.setValue(`youtubeUrls.${index}.url`, newValue, { shouldValidate: true });
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          {fields.map((field, index) => (
+          {youtubeUrls.map((_, index) => (
             <FormField
-              key={field.id}
+              key={index}
               control={form.control}
               name={`youtubeUrls.${index}.url`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>YouTube URL {fields.length > 1 ? index + 1 : ""}</FormLabel>
+                  <FormLabel>YouTube URL {youtubeUrls.length > 1 ? index + 1 : ""}</FormLabel>
                   <FormControl>
                     <div className="flex items-center gap-2">
                       <Input {...field} onChange={(e) => handleInputChange(e, index)} className="flex-1" />
                       {index > 0 && (
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const newUrls = youtubeUrls.filter((_, i) => i !== index);
+                            setYoutubeUrls(newUrls);
+                          }}
+                        >
                           <Trash className="h-4 w-4" />
                         </Button>
                       )}
@@ -90,7 +108,12 @@ export function YoutubeUrlInput({ podcastId, onSuccess }: { podcastId: string; o
           ))}
         </div>
         <div className="flex justify-between">
-          <Button type="button" variant="outline" onClick={() => append({ url: "" })}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setYoutubeUrls([...youtubeUrls, { url: "" }])}
+            disabled={youtubeUrls.length >= 50}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Add Another
           </Button>
