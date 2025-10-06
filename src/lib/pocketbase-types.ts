@@ -100,12 +100,10 @@ export type DownloadsRecord = {
 	duration?: number
 	file: string
 	id: string
-	item: RecordIdString
-	podcast: RecordIdString
 	size: number
 	title: string
 	updated?: IsoDateString
-	user: RecordIdString
+	video_id?: string
 }
 
 export enum ItemsTypeOptions {
