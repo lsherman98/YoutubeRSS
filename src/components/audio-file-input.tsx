@@ -54,7 +54,7 @@ export function AudioFileInput({ podcastId, onSuccess, audioItems, setAudioItems
 
       const newItems = droppedFiles.map((file) => ({
         file,
-        title: file.name.replace(/\.[^/.]+$/, ""), 
+        title: file.name.replace(/\.[^/.]+$/, ""),
       }));
       setAudioItems([...audioItems, ...newItems].slice(0, 50));
     },
@@ -75,7 +75,7 @@ export function AudioFileInput({ podcastId, onSuccess, audioItems, setAudioItems
     const selectedFiles = Array.from(e.target.files || []);
     const newItems = selectedFiles.map((file) => ({
       file,
-      title: file.name.replace(/\.[^/.]+$/, ""), 
+      title: file.name.replace(/\.[^/.]+$/, ""),
     }));
     setAudioItems([...audioItems, ...newItems].slice(0, 50));
   };
@@ -99,70 +99,77 @@ export function AudioFileInput({ podcastId, onSuccess, audioItems, setAudioItems
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="text-sm font-medium">Audio Files ({audioItems.length}/50)</label>
-        <div
-          className={`mt-2 border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            isDragOver ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-muted-foreground/50"
-          }`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onClick={() => document.getElementById("file-input")?.click()}
-        >
-          <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-lg font-medium mb-2">
-            Drop audio files here, or <span className="underline">browse</span>
-          </p>
-          <input
-            id="file-input"
-            type="file"
-            multiple
-            accept={SUPPORTED_EXTENSIONS.join(",")}
-            onChange={handleFileInput}
-            className="hidden"
-          />
-          <p className="text-sm text-muted-foreground">Supports .mp3, .wav, and .aac files (max 50 files)</p>
-        </div>
-      </div>
-
-      {audioItems.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Selected Files:</h4>
-          <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
-            {audioItems.map((item, index) => (
-              <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                <FileIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0 space-y-1">
-                  <Input
-                    value={item.title}
-                    onChange={(e) => handleTitleChange(index, e.target.value)}
-                    onBlur={() => handleTitleBlur(index)}
-                    placeholder="File name"
-                    className="h-8 text-sm flex-1"
-                  />
-                  {item.title.length > 0 && item.title.length < 2 && (
-                    <p className="text-xs text-destructive">Title must be at least 2 characters.</p>
-                  )}
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>({formatFileSize(item.file.size)})</span>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeFile(index)}
-                  className="flex-shrink-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+    <>
+      <label className="text-sm font-medium">Audio Files ({audioItems.length}/50)</label>
+      <div
+        className={`space-y-4 max-h-94 overflow-y-auto mb-2 h-full transition-all ${
+          isDragOver && audioItems.length > 0 ? "border-2 border-dashed border-primary bg-primary/5 rounded-lg p-2" : ""
+        }`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
+        {audioItems.length === 0 && (
+          <div
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors h-full flex flex-col items-center justify-center  ${
+              isDragOver
+                ? "border-primary bg-primary/10"
+                : "border-muted-foreground/25 hover:border-muted-foreground/50"
+            }`}
+            onClick={() => document.getElementById("file-input")?.click()}
+          >
+            <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-lg font-medium mb-2">
+              Drop audio files here, or <span className="underline">browse</span>
+            </p>
+            <input
+              id="file-input"
+              type="file"
+              multiple
+              accept={SUPPORTED_EXTENSIONS.join(",")}
+              onChange={handleFileInput}
+              className="hidden"
+            />
+            <p className="text-sm text-muted-foreground">Supports .mp3, .wav, and .aac files (max 50 files)</p>
           </div>
-        </div>
-      )}
+        )}
+
+        {audioItems.length > 0 && (
+          <div className="space-y-2">
+            <div className="space-y-2 pr-2">
+              {audioItems.map((item, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                  <FileIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <Input
+                      value={item.title}
+                      onChange={(e) => handleTitleChange(index, e.target.value)}
+                      onBlur={() => handleTitleBlur(index)}
+                      placeholder="File name"
+                      className="h-8 text-sm flex-1"
+                    />
+                    {item.title.length > 0 && item.title.length < 2 && (
+                      <p className="text-xs text-destructive">Title must be at least 2 characters.</p>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>({formatFileSize(item.file.size)})</span>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(index)}
+                    className="flex-shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
       <Button
         type="button"
         onClick={handleSubmit}
@@ -173,6 +180,6 @@ export function AudioFileInput({ podcastId, onSuccess, audioItems, setAudioItems
           ? "Uploading..."
           : `Upload ${audioItems.length} File${audioItems.length !== 1 ? "s" : ""}`}
       </Button>
-    </div>
+    </>
   );
 }

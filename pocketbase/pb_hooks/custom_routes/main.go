@@ -20,5 +20,6 @@ func Init(app *pocketbase.PocketBase) error {
 		})
 		return se.Next()
 	})
+
 	return nil
 }

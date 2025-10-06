@@ -52,7 +52,7 @@ export function AddItemDialog({ podcastId }: AddItemDialogProps) {
                 Audio Files
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="youtube" className="mt-4 flex-1 overflow-y-auto">
+            <TabsContent value="youtube" className="mt-4 flex-1">
               <YoutubeUrlInput
                 podcastId={podcastId}
                 onSuccess={() => setOpen(false)}
@@ -60,7 +60,7 @@ export function AddItemDialog({ podcastId }: AddItemDialogProps) {
                 setYoutubeUrls={setYoutubeUrls}
               />
             </TabsContent>
-            <TabsContent value="upload" className="mt-4 flex-1 overflow-y-auto">
+            <TabsContent value="upload" className="mt-4 flex-1">
               <AudioFileInput
                 podcastId={podcastId}
                 onSuccess={() => setOpen(false)}

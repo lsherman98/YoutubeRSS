@@ -16,7 +16,6 @@ func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordAfterCreateSuccess(collections.Items).BindFunc(func(e *core.RecordEvent) error {
 		itemRecord := e.Record
 		url := itemRecord.GetString("url")
-		user := itemRecord.GetString("user")
 		podcastId := itemRecord.GetString("podcast")
 		itemType := itemRecord.GetString("type")
 
@@ -48,37 +47,43 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.Next()
 			}
 
-			routine.FireAndForget(func() {
-				download := core.NewRecord(downloads)
+			download := core.NewRecord(downloads)
 
+			routine.FireAndForget(func() {
 				ytdlp := ytdlp.New()
 				if ytdlp == nil {
-					e.App.Logger().Error("Items Hooks: failed to create ytdlp client")
 					return
 				}
 
-				result, path, err := ytdlp.Download(url, download)
+				result, err := ytdlp.GetInfo(url)
 				if err != nil {
-					e.App.Logger().Error("Items Hooks: failed to download audio: " + err.Error())
+					e.App.Logger().Error("Items Hooks: failed to get video info: " + err.Error())
 					return
 				}
-				defer result.Close()
 
-				download.Set("user", user)
-				download.Set("podcast", podcastId)
-				download.Set("item", e.Record.Id)
-				if err := e.App.Save(download); err != nil {
-					e.App.Logger().Error("Items Hooks: failed to save download record: " + err.Error())
-					return
+				videoId := result.Info.ID
+				existingDownload, err := e.App.FindFirstRecordByData(collections.Downloads, "video_id", videoId)
+				if err == nil && existingDownload != nil {
+					download = existingDownload
+				} else {
+					audio, path, err := ytdlp.Download(url, download, result)
+					if err != nil {
+						e.App.Logger().Error("Items Hooks: failed to download audio: " + err.Error())
+						return
+					}
+					defer audio.Close()
+
+					if err := e.App.Save(download); err != nil {
+						return
+					}
+
+					if err := os.Remove(path); err != nil {
+						return
+					}
 				}
 
 				itemRecord.Set("download", download.Id)
 				if err := e.App.Save(itemRecord); err != nil {
-					e.App.Logger().Error("Items Hooks: failed to save item record: " + err.Error())
-					return
-				}
-
-				if err := os.Remove(path); err != nil {
 					return
 				}
 

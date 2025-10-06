@@ -74,7 +74,7 @@ export function YoutubeUrlInput({ podcastId, onSuccess, youtubeUrls, setYoutubeU
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
+        <div className="space-y-2 flex-1 overflow-y-auto max-h-96">
           {youtubeUrls.map((_, index) => (
             <FormField
               key={index}

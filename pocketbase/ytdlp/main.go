@@ -19,6 +19,11 @@ type Client struct {
 }
 
 func New() *Client {
+	dev := os.Getenv("DEV")
+	if dev == "true" {
+		return &Client{}
+	}
+
 	proxy := os.Getenv("PROXY")
 	if proxy == "ngrok" {
 		return &Client{
@@ -40,18 +45,26 @@ func New() *Client {
 	}
 }
 
-func (c *Client) Download(url string, record *core.Record) (*goutubedl.DownloadResult, string, error) {
-	result, err := goutubedl.New(context.Background(), url, goutubedl.Options{
-		ProxyUrl: c.ProxyURL,
-	})
-	if err != nil {
-		return nil, "", err
+func (c *Client) GetInfo(url string) (*goutubedl.Result, error) {
+	opts := goutubedl.Options{}
+	if os.Getenv("DEV") != "true" {
+		opts.ProxyUrl = c.ProxyURL
 	}
 
+	result, err := goutubedl.New(context.Background(), url, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+func (c *Client) Download(url string, record *core.Record, result *goutubedl.Result) (*goutubedl.DownloadResult, string, error) {
 	record.Set("title", result.Info.Title)
 	record.Set("duration", result.Info.Duration)
 	record.Set("channel", result.Info.Channel)
 	record.Set("description", result.Info.Description)
+	record.Set("video_id", result.Info.ID)
 
 	download, err := result.DownloadWithOptions(context.Background(), goutubedl.DownloadOptions{
 		AudioFormats:      "mp3",
@@ -60,6 +73,7 @@ func (c *Client) Download(url string, record *core.Record) (*goutubedl.DownloadR
 	if err != nil {
 		return nil, "", err
 	}
+	defer download.Close()
 
 	directory := "output"
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
