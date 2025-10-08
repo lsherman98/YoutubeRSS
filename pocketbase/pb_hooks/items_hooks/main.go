@@ -2,22 +2,37 @@ package items_hooks
 
 import (
 	"os"
+	"regexp"
+	"time"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/lsherman98/yt-rss/pocketbase/files"
 	"github.com/lsherman98/yt-rss/pocketbase/rss_utils"
 	"github.com/lsherman98/yt-rss/pocketbase/ytdlp"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/routine"
 )
 
 func Init(app *pocketbase.PocketBase) error {
+	app.OnRecordCreateRequest(collections.Items).BindFunc(func(e *core.RecordRequestEvent) error {
+		url := e.Record.GetString("url")
+		youtubeUrlRegex := regexp.MustCompile(`^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}(&.*)?$`)
+
+		if !youtubeUrlRegex.MatchString(url) {
+			return e.BadRequestError("Invalid YouTube URL", map[string]any{})
+		}
+
+		return e.Next()
+	})
+
 	app.OnRecordAfterCreateSuccess(collections.Items).BindFunc(func(e *core.RecordEvent) error {
 		itemRecord := e.Record
 		url := itemRecord.GetString("url")
 		podcastId := itemRecord.GetString("podcast")
 		itemType := itemRecord.GetString("type")
+		user := itemRecord.GetString("user")
 
 		podcast, err := e.App.FindRecordById(collections.Podcasts, podcastId)
 		if err != nil {
@@ -38,6 +53,14 @@ func Init(app *pocketbase.PocketBase) error {
 		p, err := rss_utils.ParseXML(content.String())
 		if err != nil {
 			return e.Next()
+		}
+
+		monthlyUsage, err := e.App.FindFirstRecordByFilter(collections.MonthlyUsage, "user = {:user} && billing_cycle_end > {:now}", dbx.Params{
+			"user": user,
+			"now":  time.Now().UTC().Format(time.RFC3339),
+		})
+		if err != nil || monthlyUsage == nil {
+			e.App.Logger().Error("Items Hooks: failed to find monthly usage record: " + err.Error())
 		}
 
 		switch itemType {
@@ -97,6 +120,14 @@ func Init(app *pocketbase.PocketBase) error {
 					e.App.Logger().Error("Items Hooks: failed to update XML file: " + err.Error())
 					return
 				}
+
+				downloadSize := download.GetInt("size")
+				currentUsage := monthlyUsage.GetInt("usage")
+				monthlyUsage.Set("usage", currentUsage+downloadSize)
+
+				if err := e.App.Save(monthlyUsage); err != nil {
+					return
+				}
 			})
 		case "upload":
 			upload, err := e.App.FindRecordById(collections.Uploads, itemRecord.GetString("upload"))
@@ -116,6 +147,12 @@ func Init(app *pocketbase.PocketBase) error {
 					return
 				}
 			})
+
+			currentUploadCount := monthlyUsage.GetInt("uploads")
+			monthlyUsage.Set("uploads", currentUploadCount+1)
+			if err := e.App.Save(monthlyUsage); err != nil {
+				return e.Next()
+			}
 		}
 
 		return e.Next()

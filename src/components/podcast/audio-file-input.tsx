@@ -102,7 +102,7 @@ export function AudioFileInput({ podcastId, onSuccess, audioItems, setAudioItems
     <>
       <label className="text-sm font-medium">Audio Files ({audioItems.length}/50)</label>
       <div
-        className={`space-y-4 max-h-94 overflow-y-auto mb-2 h-full transition-all ${
+        className={`space-y-4 max-h-92 overflow-y-auto mb-2 h-full transition-all ${
           isDragOver && audioItems.length > 0 ? "border-2 border-dashed border-primary bg-primary/5 rounded-lg p-2" : ""
         }`}
         onDrop={handleDrop}

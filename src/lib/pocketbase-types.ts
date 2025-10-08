@@ -11,11 +11,16 @@ export enum Collections {
 	Mfas = "_mfas",
 	Otps = "_otps",
 	Superusers = "_superusers",
+	ApiKeys = "api_keys",
 	Downloads = "downloads",
 	Items = "items",
+	Jobs = "jobs",
+	MonthlyUsage = "monthly_usage",
 	Podcasts = "podcasts",
 	Uploads = "uploads",
 	Users = "users",
+	WebhookEvents = "webhook_events",
+	Webhooks = "webhooks",
 }
 
 // Alias types for improved usability
@@ -94,16 +99,26 @@ export type SuperusersRecord = {
 	verified?: boolean
 }
 
+export type ApiKeysRecord = {
+	created?: IsoDateString
+	hashed_key: string
+	id: string
+	title: string
+	updated?: IsoDateString
+	user: RecordIdString
+}
+
 export type DownloadsRecord = {
 	channel: string
 	created?: IsoDateString
+	description?: string
 	duration?: number
 	file: string
 	id: string
 	size: number
 	title: string
 	updated?: IsoDateString
-	video_id?: string
+	video_id: string
 }
 
 export enum ItemsTypeOptions {
@@ -114,27 +129,57 @@ export type ItemsRecord = {
 	created?: IsoDateString
 	download?: RecordIdString
 	id: string
-	podcast?: RecordIdString
-	type?: ItemsTypeOptions
+	podcast: RecordIdString
+	type: ItemsTypeOptions
 	updated?: IsoDateString
 	upload?: RecordIdString
 	url?: string
-	user?: RecordIdString
+	user: RecordIdString
+}
+
+export enum JobsStatusOptions {
+	"SUCCESS" = "SUCCESS",
+	"ERROR" = "ERROR",
+	"PROCESSING" = "PROCESSING",
+	"STARTED" = "STARTED",
+	"CREATED" = "CREATED",
+}
+export type JobsRecord = {
+	api_key?: RecordIdString
+	batch_id: string
+	created?: IsoDateString
+	download?: RecordIdString
+	error?: string
+	id: string
+	status: JobsStatusOptions
+	updated?: IsoDateString
+	url: string
+	user: RecordIdString
+}
+
+export type MonthlyUsageRecord = {
+	billing_cycle_end: IsoDateString
+	billing_cycle_start: IsoDateString
+	created?: IsoDateString
+	id: string
+	updated?: IsoDateString
+	uploads?: number
+	usage?: number
+	user: RecordIdString
 }
 
 export type PodcastsRecord = {
 	apple_url?: string
 	created?: IsoDateString
-	description?: string
+	description: string
 	file?: string
 	id: string
-	image?: string
+	image: string
 	pocketcasts_url?: string
-	private?: boolean
 	spotify_url?: string
-	title?: string
+	title: string
 	updated?: IsoDateString
-	user?: RecordIdString
+	user: RecordIdString
 	website?: string
 	youtube_url?: string
 }
@@ -142,14 +187,14 @@ export type PodcastsRecord = {
 export type UploadsRecord = {
 	created?: IsoDateString
 	duration?: number
-	file?: string
+	file: string
 	id: string
 	item?: RecordIdString
-	podcast?: RecordIdString
+	podcast: RecordIdString
 	size?: number
-	title?: string
+	title: string
 	updated?: IsoDateString
-	user?: RecordIdString
+	user: RecordIdString
 }
 
 export type UsersRecord = {
@@ -164,17 +209,62 @@ export type UsersRecord = {
 	verified?: boolean
 }
 
+export enum WebhookEventsStatusOptions {
+	"FAILED" = "FAILED",
+	"SUCCESS" = "SUCCESS",
+	"ACTIVE" = "ACTIVE",
+}
+
+export enum WebhookEventsEventOptions {
+	"ERROR" = "ERROR",
+	"SUCCESS" = "SUCCESS",
+	"STARTED" = "STARTED",
+	"CREATED" = "CREATED",
+}
+export type WebhookEventsRecord = {
+	api_key?: RecordIdString
+	attempts?: number
+	created?: IsoDateString
+	event: WebhookEventsEventOptions
+	id: string
+	job: RecordIdString
+	status: WebhookEventsStatusOptions
+	updated?: IsoDateString
+	webhook: RecordIdString
+}
+
+export enum WebhooksEventsOptions {
+	"SUCCESS" = "SUCCESS",
+	"ERROR" = "ERROR",
+	"STARTED" = "STARTED",
+	"CREATED" = "CREATED",
+}
+export type WebhooksRecord = {
+	created?: IsoDateString
+	enabled?: boolean
+	events?: WebhooksEventsOptions[]
+	id: string
+	updated?: IsoDateString
+	url?: string
+	user: RecordIdString
+}
+
 // Response types include system fields and match responses from the PocketBase API
 export type AuthoriginsResponse<Texpand = unknown> = Required<AuthoriginsRecord> & BaseSystemFields<Texpand>
 export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRecord> & BaseSystemFields<Texpand>
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
+export type ApiKeysResponse<Texpand = unknown> = Required<ApiKeysRecord> & BaseSystemFields<Texpand>
 export type DownloadsResponse<Texpand = unknown> = Required<DownloadsRecord> & BaseSystemFields<Texpand>
 export type ItemsResponse<Texpand = unknown> = Required<ItemsRecord> & BaseSystemFields<Texpand>
+export type JobsResponse<Texpand = unknown> = Required<JobsRecord> & BaseSystemFields<Texpand>
+export type MonthlyUsageResponse<Texpand = unknown> = Required<MonthlyUsageRecord> & BaseSystemFields<Texpand>
 export type PodcastsResponse<Texpand = unknown> = Required<PodcastsRecord> & BaseSystemFields<Texpand>
 export type UploadsResponse<Texpand = unknown> = Required<UploadsRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
+export type WebhookEventsResponse<Texpand = unknown> = Required<WebhookEventsRecord> & BaseSystemFields<Texpand>
+export type WebhooksResponse<Texpand = unknown> = Required<WebhooksRecord> & BaseSystemFields<Texpand>
 
 // Types containing all Records and Responses, useful for creating typing helper functions
 
@@ -184,11 +274,16 @@ export type CollectionRecords = {
 	_mfas: MfasRecord
 	_otps: OtpsRecord
 	_superusers: SuperusersRecord
+	api_keys: ApiKeysRecord
 	downloads: DownloadsRecord
 	items: ItemsRecord
+	jobs: JobsRecord
+	monthly_usage: MonthlyUsageRecord
 	podcasts: PodcastsRecord
 	uploads: UploadsRecord
 	users: UsersRecord
+	webhook_events: WebhookEventsRecord
+	webhooks: WebhooksRecord
 }
 
 export type CollectionResponses = {
@@ -197,11 +292,16 @@ export type CollectionResponses = {
 	_mfas: MfasResponse
 	_otps: OtpsResponse
 	_superusers: SuperusersResponse
+	api_keys: ApiKeysResponse
 	downloads: DownloadsResponse
 	items: ItemsResponse
+	jobs: JobsResponse
+	monthly_usage: MonthlyUsageResponse
 	podcasts: PodcastsResponse
 	uploads: UploadsResponse
 	users: UsersResponse
+	webhook_events: WebhookEventsResponse
+	webhooks: WebhooksResponse
 }
 
 // Type for usage with type asserted PocketBase instance
@@ -213,9 +313,14 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: '_mfas'): RecordService<MfasResponse>
 	collection(idOrName: '_otps'): RecordService<OtpsResponse>
 	collection(idOrName: '_superusers'): RecordService<SuperusersResponse>
+	collection(idOrName: 'api_keys'): RecordService<ApiKeysResponse>
 	collection(idOrName: 'downloads'): RecordService<DownloadsResponse>
 	collection(idOrName: 'items'): RecordService<ItemsResponse>
+	collection(idOrName: 'jobs'): RecordService<JobsResponse>
+	collection(idOrName: 'monthly_usage'): RecordService<MonthlyUsageResponse>
 	collection(idOrName: 'podcasts'): RecordService<PodcastsResponse>
 	collection(idOrName: 'uploads'): RecordService<UploadsResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>
+	collection(idOrName: 'webhook_events'): RecordService<WebhookEventsResponse>
+	collection(idOrName: 'webhooks'): RecordService<WebhooksResponse>
 }

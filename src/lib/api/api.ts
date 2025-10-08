@@ -1,5 +1,5 @@
 import { pb } from "../pocketbase";
-import { Collections, ItemsTypeOptions, type DownloadsResponse, type ItemsResponse, type PodcastsRecord, type UploadsResponse } from "../pocketbase-types";
+import { Collections, ItemsTypeOptions, JobsStatusOptions, type DownloadsResponse, type ItemsResponse, type JobsResponse, type PodcastsRecord, type UploadsResponse, type WebhooksRecord } from "../pocketbase-types";
 import { getUserId } from "../utils";
 
 export async function addYoutubeUrls(urls: string[], podcastId: string) {
@@ -69,7 +69,6 @@ export function getPodcast(podcastId: string) {
 
 export async function getPodcasts() {
     return await pb.collection(Collections.Podcasts).getFullList({
-        filter: `user = "${getUserId()}"`,
         sort: "-created",
     });
 }
@@ -97,4 +96,70 @@ type ShareUrlResponse = {
 
 export async function getPodcastShareUrl(podcastId: string, platform: string) {
     return await pb.send<ShareUrlResponse>(`/api/share_url/${podcastId}/${platform}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+}
+
+export async function generateAPIKey(title: string) {
+    return await pb.collection(Collections.ApiKeys).create<{ api_key: string }>({ user: getUserId(), title });
+}
+
+export async function revokeAPIKey(keyId: string) {
+    return await pb.collection(Collections.ApiKeys).delete(keyId);
+}
+
+export async function getAPIKeys() {
+    return await pb.collection(Collections.ApiKeys).getFullList({
+        sort: "-created",
+    });
+}
+
+export async function createJobs(urls: string[]) {
+    const res = await pb.send<{ batchId: string }>("/api/generate-batch-id", { method: 'GET' });
+    const batchId = res.batchId;
+
+    const batch = pb.createBatch();
+    urls.forEach((url) => {
+        batch.collection(Collections.Jobs).create({ user: getUserId(), status: JobsStatusOptions.CREATED, url, batch_id: batchId });
+    });
+    return await batch.send();
+}
+
+export type ExpandJobs = {
+    download: DownloadsResponse
+}
+
+export async function getJobs() {
+    return await pb.collection<JobsResponse<ExpandJobs>>(Collections.Jobs).getFullList({
+        sort: "-created",
+        expand: "download",
+    });
+}
+
+export async function getUsage() {
+    return await pb.collection(Collections.MonthlyUsage).getFirstListItem(`billing_cycle_end >= "${new Date().toISOString()}"`)
+}
+
+export async function createWebhook(data: Partial<WebhooksRecord>) {
+    return await pb.collection(Collections.Webhooks).create({ user: getUserId(), ...data, enabled: true });
+}
+
+export async function getWebhook() {
+    try {
+        return await pb.collection(Collections.Webhooks).getFirstListItem("");
+    } catch (error) {
+        return null;
+    }
+}
+
+export async function updateWebhook(id: string, data: Partial<WebhooksRecord>) {
+    return await pb.collection(Collections.Webhooks).update(id, data);
+}
+
+export async function deleteWebhook(id: string) {
+    return await pb.collection(Collections.Webhooks).delete(id);
+}
+
+export async function getWebhookEvents() {
+    return await pb.collection(Collections.WebhookEvents).getFullList({
+        sort: "-created",
+    });
 }

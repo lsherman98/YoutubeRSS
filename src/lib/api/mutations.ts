@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addAudioFiles, addYoutubeUrls, createPodcast, deletePodcast, deletePodcastItem, updatePodcast, type AudioUpload } from "./api";
+import { addAudioFiles, addYoutubeUrls, createJobs, createPodcast, createWebhook, deletePodcast, deletePodcastItem, deleteWebhook, generateAPIKey, revokeAPIKey, updatePodcast, updateWebhook, type AudioUpload } from "./api";
 import { handleError } from "../utils";
-import type { PodcastsRecord } from "../pocketbase-types";
+import type { PodcastsRecord, WebhooksRecord } from "../pocketbase-types";
 
 export function useAddYoutubeUrls() {
     const queryClient = useQueryClient();
@@ -74,4 +74,77 @@ export function useDeletePodcast() {
         },
     })
 }
+
+export function useGenerateAPIKey() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (title: string) => generateAPIKey(title),
+        onError: handleError,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["apiKeys"] });
+        },
+    })
+}
+
+export function useRevokeAPIKey() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (keyId: string) => revokeAPIKey(keyId),
+        onError: handleError,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["apiKeys"] });
+        },
+    })
+}
+
+export function useCreateJobs() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (urls: string[]) => createJobs(urls),
+        onError: handleError,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["jobs"] });
+        },
+    })
+}
+
+export function useCreateWebhook() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: Partial<WebhooksRecord>) => createWebhook(data),
+        onError: handleError,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhook"] });
+        },
+    })
+}
+
+export function useUpdateWebhook() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string, data: Partial<WebhooksRecord> }) => updateWebhook(id, data),
+        onError: handleError,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhook"] });
+        },
+    })
+}
+
+export function useDeleteWebhook() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => deleteWebhook(id),
+        onError: handleError,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["webhook"] });
+        },
+    })
+}
+
 

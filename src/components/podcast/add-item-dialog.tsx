@@ -9,10 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Youtube, Upload } from "lucide-react";
-import { YoutubeUrlInput } from "@/components/youtube-url-input";
-import { AudioFileInput } from "@/components/audio-file-input";
+import { YoutubeUrlInput, YoutubeURLsFormSchema } from "@/components/youtube-url-input";
+import { AudioFileInput } from "@/components/podcast/audio-file-input";
 import { useState } from "react";
 import type { AudioUpload } from "@/lib/api/api";
+import type z from "zod";
+import { useAddYoutubeUrls } from "@/lib/api/mutations";
 
 interface AddItemDialogProps {
   podcastId: string | null;
@@ -22,6 +24,24 @@ export function AddItemDialog({ podcastId }: AddItemDialogProps) {
   const [isOpen, setOpen] = useState(false);
   const [youtubeUrls, setYoutubeUrls] = useState<{ url: string }[]>([{ url: "" }]);
   const [audioUploads, setAudioUploads] = useState<AudioUpload[]>([]);
+
+  const addYoutubeUrlsMutation = useAddYoutubeUrls();
+
+  function onYoutubeURLSubmit(data: z.infer<typeof YoutubeURLsFormSchema>) {
+    const urls = data.youtubeUrls.filter((item) => item.url.trim() !== "").map((item) => item.url.trim());
+
+    if (!podcastId) return;
+
+    addYoutubeUrlsMutation.mutate(
+      { urls, podcastId },
+      {
+        onSuccess: () => {
+          setYoutubeUrls([{ url: "" }]);
+          setOpen(false);
+        },
+      }
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
@@ -54,10 +74,10 @@ export function AddItemDialog({ podcastId }: AddItemDialogProps) {
             </TabsList>
             <TabsContent value="youtube" className="mt-4 flex-1">
               <YoutubeUrlInput
-                podcastId={podcastId}
-                onSuccess={() => setOpen(false)}
                 youtubeUrls={youtubeUrls}
                 setYoutubeUrls={setYoutubeUrls}
+                onSubmit={onYoutubeURLSubmit}
+                isPending={addYoutubeUrlsMutation.isPending}
               />
             </TabsContent>
             <TabsContent value="upload" className="mt-4 flex-1">

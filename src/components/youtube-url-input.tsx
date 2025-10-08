@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash } from "lucide-react";
-import { useAddYoutubeUrls } from "@/lib/api/mutations";
 
 const youtubeUrlRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}(&.*)?$/;
 
-const FormSchema = z.object({
+export const YoutubeURLsFormSchema = z.object({
   youtubeUrls: z
     .array(
       z.object({
@@ -25,34 +24,19 @@ const FormSchema = z.object({
 type YouTubeUrlItem = { url: string };
 
 interface YoutubeUrlInputProps {
-  podcastId: string;
-  onSuccess: () => void;
   youtubeUrls: YouTubeUrlItem[];
   setYoutubeUrls: (urls: YouTubeUrlItem[]) => void;
+  onSubmit: (data: z.infer<typeof YoutubeURLsFormSchema>) => void;
+  isPending: boolean;
 }
 
-export function YoutubeUrlInput({ podcastId, onSuccess, youtubeUrls, setYoutubeUrls }: YoutubeUrlInputProps) {
-  const addYoutubeUrlsMutation = useAddYoutubeUrls();
-
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+export function YoutubeUrlInput({ youtubeUrls, setYoutubeUrls, onSubmit, isPending }: YoutubeUrlInputProps) {
+  const form = useForm<z.infer<typeof YoutubeURLsFormSchema>>({
+    resolver: zodResolver(YoutubeURLsFormSchema),
     values: {
       youtubeUrls: youtubeUrls,
     },
   });
-
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    const urls = data.youtubeUrls.filter((item) => item.url.trim() !== "").map((item) => item.url.trim());
-    addYoutubeUrlsMutation.mutate(
-      { urls, podcastId },
-      {
-        onSuccess: () => {
-          setYoutubeUrls([{ url: "" }]);
-          onSuccess();
-        },
-      }
-    );
-  }
 
   function isValidYoutubeUrl(url: string) {
     return youtubeUrlRegex.test(url);
@@ -117,8 +101,8 @@ export function YoutubeUrlInput({ podcastId, onSuccess, youtubeUrls, setYoutubeU
             <Plus className="mr-2 h-4 w-4" />
             Add Another
           </Button>
-          <Button type="submit" disabled={addYoutubeUrlsMutation.isPending}>
-            {addYoutubeUrlsMutation.isPending ? "Adding..." : "Add URLs"}
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Adding..." : "Add URLs"}
           </Button>
         </div>
       </form>

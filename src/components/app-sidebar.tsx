@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Podcast, Settings } from "lucide-react";
+import { KeyRound, Podcast, Send, Server } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { pb } from "@/lib/pocketbase";
 
@@ -21,14 +21,23 @@ const data = {
       url: "/podcasts",
       icon: Podcast,
     },
-  ],
-  navSecondary: [
     {
-      title: "Settings",
-      url: "/settings",
-      icon: Settings,
+      title: "API Keys",
+      url: "/keys",
+      icon: KeyRound,
+    },
+    {
+      title: "Jobs",
+      url: "/jobs",
+      icon: Server,
+    },
+    {
+      title: "Webhooks",
+      url: "/webhooks",
+      icon: Send,
     },
   ],
+  navSecondary: [],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

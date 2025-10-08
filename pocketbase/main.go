@@ -7,11 +7,15 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lsherman98/yt-rss/pocketbase/migrations"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/api_hooks"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/api_key_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/file_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/items_hooks"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/jobs_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/podcast_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/share_url_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/uploads_hooks"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/users_hooks"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -42,6 +46,22 @@ func main() {
 	}
 
 	if err := uploads_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := api_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := api_key_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := jobs_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := users_hooks.Init(app); err != nil {
 		log.Fatal(err)
 	}
 
