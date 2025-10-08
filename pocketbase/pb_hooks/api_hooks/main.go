@@ -51,6 +51,7 @@ func Init(app *pocketbase.PocketBase) error {
 		}).Bind(apis.RequireAuth())
 
 		se.Router.POST("/api/v1/convert", func(e *core.RequestEvent) error {
+			e.App.Logger().Info("API Hooks: /api/v1/convert called")
 			body := ConvertRequest{}
 			if err := e.BindBody(&body); err != nil {
 				return e.BadRequestError("Invalid request body", err)
@@ -85,10 +86,10 @@ func Init(app *pocketbase.PocketBase) error {
 					jobRecord := core.NewRecord(jobCollection)
 					jobRecord.Set("user", apiKeyRecord.GetString("user"))
 					jobRecord.Set("url", url)
-					jobRecord.Set("status", "PENDING")
+					jobRecord.Set("status", "CREATED")
 					jobRecord.Set("batch_id", batchId)
 					jobRecord.Set("api_key", apiKeyRecord.Id)
-					if err := app.Save(jobRecord); err != nil {
+					if err := txApp.Save(jobRecord); err != nil {
 						e.App.Logger().Error("API Hooks: failed to create job record: " + err.Error())
 						return err
 					}
@@ -96,7 +97,7 @@ func Init(app *pocketbase.PocketBase) error {
 					jobs = append(jobs, JobResponse{
 						ID:     jobRecord.Id,
 						URL:    url,
-						Status: "PENDING",
+						Status: "CREATED",
 					})
 				}
 

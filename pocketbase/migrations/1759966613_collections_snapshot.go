@@ -912,10 +912,8 @@ func init() {
 						"maxSize": 1000000000,
 						"mimeTypes": [
 							"audio/mpeg",
-							"video/webm",
-							"audio/aac",
-							"audio/flac",
-							"audio/wav"
+							"audio/x-m4a",
+							"video/webm"
 						],
 						"name": "file",
 						"presentable": false,
@@ -1030,7 +1028,7 @@ func init() {
 				"indexes": [
 					"CREATE UNIQUE INDEX ` + "`" + `idx_AO35V4qr0y` + "`" + ` ON ` + "`" + `downloads` + "`" + ` (` + "`" + `video_id` + "`" + `)"
 				],
-				"listRule": null,
+				"listRule": "@request.auth.id != \"\"",
 				"name": "downloads",
 				"system": false,
 				"type": "base",

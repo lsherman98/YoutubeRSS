@@ -9,6 +9,7 @@ import (
 
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/filesystem"
+	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"github.com/wader/goutubedl"
 )
 
@@ -74,7 +75,6 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 	record.Set("video_id", result.Info.ID)
 
 	download, err := result.DownloadWithOptions(context.Background(), goutubedl.DownloadOptions{
-		AudioFormats:      "mp3",
 		DownloadAudioOnly: true,
 	})
 	if err != nil {
@@ -93,7 +93,7 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 		}
 	}
 
-	path := directory + "/" + result.Info.ID + ".mp3"
+	path := directory + "/" + result.Info.ID + ".webm"
 	f, err := os.Create(path)
 	if err != nil {
 		c.App.Logger().Error("YTDLP: failed to create output file", "error", err)
@@ -102,7 +102,16 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 	defer f.Close()
 	io.Copy(f, download)
 
-	audio, err := filesystem.NewFileFromPath(path)
+	convertedPath := directory + "/" + result.Info.ID + ".mp3"
+	err = ffmpeg.Input(path).
+		Output(convertedPath, ffmpeg.KwArgs{"vn": "", "acodec": "libmp3lame", "ab": "192k"}).
+		OverWriteOutput().ErrorToStdOut().Run()
+	if err != nil {
+		c.App.Logger().Error("YTDLP: ffmpeg conversion failed", "error", err)
+		return nil, "", err
+	}
+
+	audio, err := filesystem.NewFileFromPath(convertedPath)
 	if err != nil {
 		c.App.Logger().Error("YTDLP: failed to create file from path", "error", err)
 		return nil, "", err
@@ -110,5 +119,12 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 
 	record.Set("file", audio)
 	record.Set("size", audio.Size)
-	return download, path, nil
+
+	err = os.Remove(path)
+	if err != nil {
+		c.App.Logger().Error("YTDLP: failed to delete original file", "error", err)
+		return nil, "", err
+	}
+
+	return download, convertedPath, nil
 }
