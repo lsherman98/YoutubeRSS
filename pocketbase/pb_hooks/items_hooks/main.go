@@ -42,16 +42,19 @@ func Init(app *pocketbase.PocketBase) error {
 
 		fileClient, err := files.NewFileClient(e.App, podcast, "file")
 		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to create file client: " + err.Error())
 			return e.Next()
 		}
 
 		content, err := fileClient.GetXMLFile()
 		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to get XML file: " + err.Error())
 			return e.Next()
 		}
 
 		p, err := rss_utils.ParseXML(content.String())
 		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to parse XML file: " + err.Error())
 			return e.Next()
 		}
 
@@ -67,14 +70,16 @@ func Init(app *pocketbase.PocketBase) error {
 		case "url":
 			downloads, err := e.App.FindCollectionByNameOrId(collections.Downloads)
 			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to find downloads collection: " + err.Error())
 				return e.Next()
 			}
 
 			download := core.NewRecord(downloads)
 
 			routine.FireAndForget(func() {
-				ytdlp := ytdlp.New()
+				ytdlp := ytdlp.New(e.App)
 				if ytdlp == nil {
+					e.App.Logger().Error("Items Hooks: failed to initialize ytdlp")
 					return
 				}
 
@@ -97,16 +102,19 @@ func Init(app *pocketbase.PocketBase) error {
 					defer audio.Close()
 
 					if err := e.App.Save(download); err != nil {
+						e.App.Logger().Error("Items Hooks: failed to save download record: " + err.Error())
 						return
 					}
 
 					if err := os.Remove(path); err != nil {
+						e.App.Logger().Error("Items Hooks: failed to remove temp file: " + err.Error())
 						return
 					}
 				}
 
 				itemRecord.Set("download", download.Id)
 				if err := e.App.Save(itemRecord); err != nil {
+					e.App.Logger().Error("Items Hooks: failed to update item record with download ID: " + err.Error())
 					return
 				}
 
@@ -126,6 +134,7 @@ func Init(app *pocketbase.PocketBase) error {
 				monthlyUsage.Set("usage", currentUsage+downloadSize)
 
 				if err := e.App.Save(monthlyUsage); err != nil {
+					e.App.Logger().Error("Items Hooks: failed to update monthly usage: " + err.Error())
 					return
 				}
 			})
@@ -151,6 +160,7 @@ func Init(app *pocketbase.PocketBase) error {
 			currentUploadCount := monthlyUsage.GetInt("uploads")
 			monthlyUsage.Set("uploads", currentUploadCount+1)
 			if err := e.App.Save(monthlyUsage); err != nil {
+				e.App.Logger().Error("Items Hooks: failed to update monthly usage: " + err.Error())
 				return e.Next()
 			}
 		}
@@ -172,16 +182,19 @@ func Init(app *pocketbase.PocketBase) error {
 
 		fileClient, err := files.NewFileClient(e.App, podcast, "file")
 		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to create file client: " + err.Error())
 			return e.Next()
 		}
 
 		content, err := fileClient.GetXMLFile()
 		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to get XML file: " + err.Error())
 			return e.Next()
 		}
 
 		p, err := rss_utils.ParseXML(content.String())
 		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to parse XML file: " + err.Error())
 			return e.Next()
 		}
 
@@ -193,6 +206,7 @@ func Init(app *pocketbase.PocketBase) error {
 		}
 
 		if err := UpdateXMLFile(e.App, fileClient, p, podcast); err != nil {
+			e.App.Logger().Error("Items Hooks: failed to update XML file: " + err.Error())
 			return e.Next()
 		}
 

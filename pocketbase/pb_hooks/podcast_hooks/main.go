@@ -19,6 +19,7 @@ func Init(app *pocketbase.PocketBase) error {
 		email := e.Auth.Email()
 
 		if err := e.App.Save(podcast); err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to save podcast", "error", err)
 			return e.Next()
 		}
 
@@ -26,17 +27,20 @@ func Init(app *pocketbase.PocketBase) error {
 		if image == "" {
 			file, err := filesystem.NewFileFromPath("./pb_public/static/rss.png")
 			if err != nil {
+				e.App.Logger().Error("Podcast Hooks: failed to create file from path", "error", err)
 				return e.Next()
 			}
 
 			podcast.Set("image", file)
 			if err := e.App.Save(podcast); err != nil {
+				e.App.Logger().Error("Podcast Hooks: failed to save podcast with default image", "error", err)
 				return e.Next()
 			}
 		}
 
 		fileClient, err := files.NewFileClient(e.App, podcast, "file")
 		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to create file client", "error", err)
 			return e.Next()
 		}
 		defer fileClient.Close()
@@ -52,16 +56,19 @@ func Init(app *pocketbase.PocketBase) error {
 
 		xml, err := rss_utils.GenerateXML(&p)
 		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to generate XML", "error", err)
 			return e.Next()
 		}
 
 		xmlFile, err := fileClient.NewXMLFile(xml, podcast.Id)
 		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to create new XML file", "error", err)
 			return e.Next()
 		}
 
 		podcast.Set("file", xmlFile)
 		if err := e.App.Save(podcast); err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to save podcast with XML file", "error", err)
 			return e.Next()
 		}
 
@@ -76,17 +83,20 @@ func Init(app *pocketbase.PocketBase) error {
 
 		fileClient, err := files.NewFileClient(e.App, podcast, "file")
 		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to create file client", "error", err)
 			return e.Next()
 		}
 		defer fileClient.Close()
 
 		content, err := fileClient.GetXMLFile()
 		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to get XML file", "error", err)
 			return e.Next()
 		}
 
 		p, err := rss_utils.ParseXML(content.String())
 		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to parse XML", "error", err)
 			return e.Next()
 		}
 
@@ -102,16 +112,19 @@ func Init(app *pocketbase.PocketBase) error {
 
 		xml, err := rss_utils.GenerateXML(&p)
 		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to generate XML", "error", err)
 			return e.Next()
 		}
 
 		xmlFile, err := fileClient.NewXMLFile(xml, podcast.Id)
 		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to create new XML file", "error", err)
 			return e.Next()
 		}
 
 		podcast.Set("file", xmlFile)
 		if err := e.App.Save(podcast); err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to save podcast with new XML file", "error", err)
 			return e.Next()
 		}
 

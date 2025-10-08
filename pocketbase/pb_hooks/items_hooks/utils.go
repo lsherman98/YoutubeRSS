@@ -18,16 +18,19 @@ import (
 func UpdateXMLFile(app core.App, fileClient *files.FileClient, p podcast.Podcast, podcast *core.Record) error {
 	xml, err := rss_utils.GenerateXML(&p)
 	if err != nil {
+		app.Logger().Error("Items Hooks: failed to generate XML", "error", err)
 		return err
 	}
 
 	xmlFile, err := fileClient.NewXMLFile(xml, podcast.Id)
 	if err != nil {
+		app.Logger().Error("Items Hooks: failed to create new XML file", "error", err)
 		return err
 	}
 
 	podcast.Set("file", xmlFile)
 	if err := app.Save(podcast); err != nil {
+		app.Logger().Error("Items Hooks: failed to save podcast with new XML file", "error", err)
 		return err
 	}
 

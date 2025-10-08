@@ -13,20 +13,24 @@ import (
 )
 
 type Client struct {
+	App       core.App
 	ProxyHost string
 	ProxyAuth string
 	ProxyURL  string
 }
 
-func New() *Client {
+func New(app core.App) *Client {
 	dev := os.Getenv("DEV")
 	if dev == "true" {
-		return &Client{}
+		return &Client{
+			App: app,
+		}
 	}
 
 	proxy := os.Getenv("PROXY")
 	if proxy == "ngrok" {
 		return &Client{
+			App:      app,
 			ProxyURL: os.Getenv("NGROK_PROXY"),
 		}
 	}
@@ -35,10 +39,12 @@ func New() *Client {
 	auth := os.Getenv("IP_ROYAL_PROXY_AUTH")
 	url, err := u.Parse(fmt.Sprintf("http://%s@%s", auth, host))
 	if err != nil {
+		app.Logger().Error("YTDLP: failed to parse proxy URL", "error", err)
 		return nil
 	}
 
 	return &Client{
+		App:       app,
 		ProxyHost: host,
 		ProxyAuth: auth,
 		ProxyURL:  url.String(),
@@ -53,6 +59,7 @@ func (c *Client) GetInfo(url string) (*goutubedl.Result, error) {
 
 	result, err := goutubedl.New(context.Background(), url, opts)
 	if err != nil {
+		c.App.Logger().Error("YTDLP: failed to get info", "error", err)
 		return nil, err
 	}
 
@@ -71,14 +78,17 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 		DownloadAudioOnly: true,
 	})
 	if err != nil {
+		c.App.Logger().Error("YTDLP: failed to download audio", "error", err)
 		return nil, "", err
 	}
 	defer download.Close()
 
 	directory := "output"
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
+		c.App.Logger().Info("YTDLP: output directory does not exist, creating it")
 		err = os.Mkdir(directory, 0755)
 		if err != nil {
+			c.App.Logger().Error("YTDLP: failed to create output directory", "error", err)
 			return nil, "", err
 		}
 	}
@@ -86,6 +96,7 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 	path := directory + "/" + result.Info.ID + ".mp3"
 	f, err := os.Create(path)
 	if err != nil {
+		c.App.Logger().Error("YTDLP: failed to create output file", "error", err)
 		return nil, "", err
 	}
 	defer f.Close()
@@ -93,6 +104,7 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 
 	audio, err := filesystem.NewFileFromPath(path)
 	if err != nil {
+		c.App.Logger().Error("YTDLP: failed to create file from path", "error", err)
 		return nil, "", err
 	}
 

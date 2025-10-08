@@ -18,6 +18,7 @@ type FileClient struct {
 func NewFileClient(app core.App, record *core.Record, field string) (*FileClient, error) {
 	fsys, err := app.NewFilesystem()
 	if err != nil {
+		app.Logger().Error("Failed to create filesystem:", "error", err)
 		return nil, err
 	}
 
@@ -49,6 +50,7 @@ func (c *FileClient) GetFileURL(record *core.Record, field string) string {
 func (c *FileClient) GetXMLFile() (*bytes.Buffer, error) {
 	r, err := c.fsys.GetReader(c.fileKey)
 	if err != nil {
+		c.app.Logger().Error("Failed to get file reader:", "error", err)
 		return nil, err
 	}
 	defer r.Close()
@@ -56,6 +58,7 @@ func (c *FileClient) GetXMLFile() (*bytes.Buffer, error) {
 	content := new(bytes.Buffer)
 	_, err = io.Copy(content, r)
 	if err != nil {
+		c.app.Logger().Error("Failed to read file content:", "error", err)
 		return nil, err
 	}
 
@@ -65,6 +68,7 @@ func (c *FileClient) GetXMLFile() (*bytes.Buffer, error) {
 func (c *FileClient) NewXMLFile(xml, fileName string) (*filesystem.File, error) {
 	file, err := filesystem.NewFileFromBytes([]byte(xml), fileName+".rss")
 	if err != nil {
+		c.app.Logger().Error("Failed to create new file from bytes:", "error", err)
 		return nil, err
 	}
 

@@ -785,14 +785,14 @@ func init() {
 						"hidden": false,
 						"id": "url4101391790",
 						"name": "url",
-						"onlyDomains": null,
+						"onlyDomains": [],
 						"presentable": false,
 						"required": false,
 						"system": false,
 						"type": "url"
 					},
 					{
-						"cascadeDelete": false,
+						"cascadeDelete": true,
 						"collectionId": "_pb_users_auth_",
 						"hidden": false,
 						"id": "relation2375276105",
@@ -800,7 +800,7 @@ func init() {
 						"minSelect": 0,
 						"name": "user",
 						"presentable": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"type": "relation"
 					},
@@ -813,9 +813,23 @@ func init() {
 						"minSelect": 0,
 						"name": "podcast",
 						"presentable": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "select2363381545",
+						"maxSelect": 1,
+						"name": "type",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "select",
+						"values": [
+							"upload",
+							"url"
+						]
 					},
 					{
 						"cascadeDelete": false,
@@ -829,20 +843,6 @@ func init() {
 						"required": false,
 						"system": false,
 						"type": "relation"
-					},
-					{
-						"hidden": false,
-						"id": "select2363381545",
-						"maxSelect": 1,
-						"name": "type",
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "select",
-						"values": [
-							"upload",
-							"url"
-						]
 					},
 					{
 						"cascadeDelete": false,
@@ -926,19 +926,6 @@ func init() {
 						"type": "file"
 					},
 					{
-						"cascadeDelete": false,
-						"collectionId": "_pb_users_auth_",
-						"hidden": false,
-						"id": "relation2375276105",
-						"maxSelect": 1,
-						"minSelect": 0,
-						"name": "user",
-						"presentable": false,
-						"required": true,
-						"system": false,
-						"type": "relation"
-					},
-					{
 						"autogeneratePattern": "",
 						"hidden": false,
 						"id": "text724990059",
@@ -979,32 +966,6 @@ func init() {
 						"type": "text"
 					},
 					{
-						"cascadeDelete": true,
-						"collectionId": "pbc_3271294384",
-						"hidden": false,
-						"id": "relation3622307261",
-						"maxSelect": 1,
-						"minSelect": 0,
-						"name": "podcast",
-						"presentable": false,
-						"required": true,
-						"system": false,
-						"type": "relation"
-					},
-					{
-						"cascadeDelete": true,
-						"collectionId": "pbc_4204686209",
-						"hidden": false,
-						"id": "relation521872670",
-						"maxSelect": 1,
-						"minSelect": 0,
-						"name": "item",
-						"presentable": false,
-						"required": true,
-						"system": false,
-						"type": "relation"
-					},
-					{
 						"hidden": false,
 						"id": "number4156564586",
 						"max": null,
@@ -1015,6 +976,34 @@ func init() {
 						"required": true,
 						"system": false,
 						"type": "number"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text700514382",
+						"max": 0,
+						"min": 0,
+						"name": "video_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": true,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text1843675174",
+						"max": 0,
+						"min": 0,
+						"name": "description",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
 					},
 					{
 						"hidden": false,
@@ -1038,13 +1027,15 @@ func init() {
 					}
 				],
 				"id": "pbc_2488717294",
-				"indexes": [],
-				"listRule": "@request.auth.id = user.id",
+				"indexes": [
+					"CREATE UNIQUE INDEX ` + "`" + `idx_AO35V4qr0y` + "`" + ` ON ` + "`" + `downloads` + "`" + ` (` + "`" + `video_id` + "`" + `)"
+				],
+				"listRule": null,
 				"name": "downloads",
 				"system": false,
 				"type": "base",
 				"updateRule": null,
-				"viewRule": "@request.auth.id = user.id"
+				"viewRule": "@request.auth.id != \"\""
 			},
 			{
 				"createRule": "@request.auth.id != \"\"",
@@ -1074,7 +1065,7 @@ func init() {
 						"pattern": "",
 						"presentable": false,
 						"primaryKey": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"type": "text"
 					},
@@ -1087,7 +1078,7 @@ func init() {
 						"minSelect": 0,
 						"name": "user",
 						"presentable": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"type": "relation"
 					},
@@ -1106,15 +1097,6 @@ func init() {
 						"type": "file"
 					},
 					{
-						"hidden": false,
-						"id": "bool3523658193",
-						"name": "private",
-						"presentable": false,
-						"required": false,
-						"system": false,
-						"type": "bool"
-					},
-					{
 						"autogeneratePattern": "",
 						"hidden": false,
 						"id": "text1843675174",
@@ -1124,7 +1106,7 @@ func init() {
 						"pattern": "",
 						"presentable": false,
 						"primaryKey": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"type": "text"
 					},
@@ -1152,7 +1134,7 @@ func init() {
 						"name": "image",
 						"presentable": false,
 						"protected": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"thumbs": [],
 						"type": "file"
@@ -1233,7 +1215,7 @@ func init() {
 			},
 			{
 				"createRule": "@request.auth.id != \"\"",
-				"deleteRule": null,
+				"deleteRule": "@request.auth.id = user.id",
 				"fields": [
 					{
 						"autogeneratePattern": "[a-z0-9]{15}",
@@ -1258,7 +1240,7 @@ func init() {
 						"name": "file",
 						"presentable": false,
 						"protected": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"thumbs": [],
 						"type": "file"
@@ -1273,7 +1255,7 @@ func init() {
 						"pattern": "",
 						"presentable": false,
 						"primaryKey": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"type": "text"
 					},
@@ -1299,7 +1281,7 @@ func init() {
 						"minSelect": 0,
 						"name": "podcast",
 						"presentable": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"type": "relation"
 					},
@@ -1312,7 +1294,7 @@ func init() {
 						"minSelect": 0,
 						"name": "user",
 						"presentable": false,
-						"required": false,
+						"required": true,
 						"system": false,
 						"type": "relation"
 					},
@@ -1365,6 +1347,580 @@ func init() {
 				"indexes": [],
 				"listRule": "@request.auth.id = user.id",
 				"name": "uploads",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": "@request.auth.id = user.id"
+			},
+			{
+				"createRule": "@request.auth.id != \"\"",
+				"deleteRule": "@request.auth.id = user.id",
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"cascadeDelete": true,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text724990059",
+						"max": 0,
+						"min": 0,
+						"name": "title",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": true,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": true,
+						"id": "text571477967",
+						"max": 0,
+						"min": 0,
+						"name": "hashed_key",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": true,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "autodate3332085495",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "pbc_3577178630",
+				"indexes": [
+					"CREATE UNIQUE INDEX ` + "`" + `idx_cHZwJuADx9` + "`" + ` ON ` + "`" + `api_keys` + "`" + ` (` + "`" + `hashed_key` + "`" + `)"
+				],
+				"listRule": "@request.auth.id = user.id",
+				"name": "api_keys",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": "@request.auth.id = user.id"
+			},
+			{
+				"createRule": "@request.auth.id != \"\"",
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "url4101391790",
+						"name": "url",
+						"onlyDomains": [],
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "url"
+					},
+					{
+						"cascadeDelete": true,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_3577178630",
+						"hidden": false,
+						"id": "relation3373460893",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "api_key",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_2488717294",
+						"hidden": false,
+						"id": "relation2015003248",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "download",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "select2063623452",
+						"maxSelect": 1,
+						"name": "status",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "select",
+						"values": [
+							"SUCCESS",
+							"ERROR",
+							"PROCESSING",
+							"STARTED",
+							"CREATED"
+						]
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text4087266938",
+						"max": 0,
+						"min": 0,
+						"name": "batch_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": true,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text1574812785",
+						"max": 0,
+						"min": 0,
+						"name": "error",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "autodate3332085495",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "pbc_2409499253",
+				"indexes": [
+					"CREATE INDEX ` + "`" + `idx_kmZ3QA5Qpe` + "`" + ` ON ` + "`" + `jobs` + "`" + ` (` + "`" + `batch_id` + "`" + `)"
+				],
+				"listRule": "@request.auth.id = user.id",
+				"name": "jobs",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": "@request.auth.id = user.id"
+			},
+			{
+				"createRule": "@request.auth.id != \"\"",
+				"deleteRule": "@request.auth.id = user.id",
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "url4101391790",
+						"name": "url",
+						"onlyDomains": null,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "url"
+					},
+					{
+						"hidden": false,
+						"id": "select1401378634",
+						"maxSelect": 4,
+						"name": "events",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "select",
+						"values": [
+							"SUCCESS",
+							"ERROR",
+							"STARTED",
+							"CREATED"
+						]
+					},
+					{
+						"hidden": false,
+						"id": "bool1358543748",
+						"name": "enabled",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "bool"
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "autodate3332085495",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "pbc_3653375940",
+				"indexes": [
+					"CREATE UNIQUE INDEX ` + "`" + `idx_Bj6tVw2zka` + "`" + ` ON ` + "`" + `webhooks` + "`" + ` (` + "`" + `user` + "`" + `)"
+				],
+				"listRule": "@request.auth.id = user.id",
+				"name": "webhooks",
+				"system": false,
+				"type": "base",
+				"updateRule": "@request.auth.id = user.id",
+				"viewRule": "@request.auth.id = user.id"
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"cascadeDelete": true,
+						"collectionId": "pbc_3653375940",
+						"hidden": false,
+						"id": "relation2322863958",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "webhook",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_3577178630",
+						"hidden": false,
+						"id": "relation3373460893",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "api_key",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "number3217549156",
+						"max": null,
+						"min": null,
+						"name": "attempts",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"hidden": false,
+						"id": "select2063623452",
+						"maxSelect": 1,
+						"name": "status",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "select",
+						"values": [
+							"FAILED",
+							"SUCCESS",
+							"ACTIVE"
+						]
+					},
+					{
+						"cascadeDelete": true,
+						"collectionId": "pbc_2409499253",
+						"hidden": false,
+						"id": "relation4225294584",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "job",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "select1001261735",
+						"maxSelect": 1,
+						"name": "event",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "select",
+						"values": [
+							"ERROR",
+							"SUCCESS",
+							"STARTED",
+							"CREATED"
+						]
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "autodate3332085495",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "pbc_1564425120",
+				"indexes": [],
+				"listRule": "@request.auth.id = webhook.user.id",
+				"name": "webhook_events",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": "@request.auth.id = webhook.user.id"
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"cascadeDelete": true,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "date2966313053",
+						"max": "",
+						"min": "",
+						"name": "billing_cycle_start",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "date2088949017",
+						"max": "",
+						"min": "",
+						"name": "billing_cycle_end",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "number3505086064",
+						"max": null,
+						"min": null,
+						"name": "usage",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"hidden": false,
+						"id": "number2517729048",
+						"max": null,
+						"min": null,
+						"name": "uploads",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "autodate3332085495",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "pbc_464380059",
+				"indexes": [
+					"CREATE UNIQUE INDEX ` + "`" + `idx_humOf0Qkwb` + "`" + ` ON ` + "`" + `monthly_usage` + "`" + ` (\n  ` + "`" + `user` + "`" + `,\n  ` + "`" + `billing_cycle_start` + "`" + `,\n  ` + "`" + `billing_cycle_end` + "`" + `\n)"
+				],
+				"listRule": "@request.auth.id = user.id",
+				"name": "monthly_usage",
 				"system": false,
 				"type": "base",
 				"updateRule": null,

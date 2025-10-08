@@ -33,6 +33,7 @@ func Init(app *pocketbase.PocketBase) error {
 
 		downloads, err := e.App.FindCollectionByNameOrId(collections.Downloads)
 		if err != nil {
+			e.App.Logger().Error("Jobs Hooks: failed to find downloads collection: " + err.Error())
 			return e.Next()
 		}
 
@@ -46,6 +47,7 @@ func Init(app *pocketbase.PocketBase) error {
 		routine.FireAndForget(func() {
 			job.Set("status", "STARTED")
 			if err := e.App.Save(job); err != nil {
+				e.App.Logger().Error("Jobs Hooks: failed to update job status to STARTED: " + err.Error())
 				return
 			}
 
@@ -53,8 +55,9 @@ func Init(app *pocketbase.PocketBase) error {
 				webhookClient.Send("STARTED")
 			}
 
-			ytdlp := ytdlp.New()
+			ytdlp := ytdlp.New(e.App)
 			if ytdlp == nil {
+				e.App.Logger().Error("Jobs Hooks: failed to initialize ytdlp")
 				return
 			}
 
@@ -66,6 +69,7 @@ func Init(app *pocketbase.PocketBase) error {
 
 			job.Set("status", "PROCESSING")
 			if err := e.App.Save(job); err != nil {
+				e.App.Logger().Error("Jobs Hooks: failed to update job status to PROCESSING: " + err.Error())
 				return
 			}
 
@@ -87,10 +91,12 @@ func Init(app *pocketbase.PocketBase) error {
 				defer audio.Close()
 
 				if err := e.App.Save(download); err != nil {
+					e.App.Logger().Error("Jobs Hooks: failed to save download record: " + err.Error())
 					return
 				}
 
 				if err := os.Remove(path); err != nil {
+					e.App.Logger().Error("Jobs Hooks: failed to remove temp file: " + err.Error())
 					return
 				}
 			}
@@ -98,6 +104,7 @@ func Init(app *pocketbase.PocketBase) error {
 			job.Set("download", download.Id)
 			job.Set("status", "SUCCESS")
 			if err := e.App.Save(job); err != nil {
+				e.App.Logger().Error("Jobs Hooks: failed to update job status to SUCCESS: " + err.Error())
 				return
 			}
 
@@ -110,6 +117,7 @@ func Init(app *pocketbase.PocketBase) error {
 				"now":  time.Now().UTC().Format(time.RFC3339),
 			})
 			if err != nil || monthlyUsage == nil {
+				e.App.Logger().Error("Jobs Hooks: failed to find monthly usage record: " + err.Error())
 				return
 			}
 
@@ -118,6 +126,7 @@ func Init(app *pocketbase.PocketBase) error {
 			monthlyUsage.Set("usage", currentUsage+downloadSize)
 
 			if err := e.App.Save(monthlyUsage); err != nil {
+				e.App.Logger().Error("Jobs Hooks: failed to update monthly usage: " + err.Error())
 				return
 			}
 		})

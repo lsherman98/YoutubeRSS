@@ -10,6 +10,7 @@ func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordAfterCreateSuccess(collections.Uploads).BindFunc(func(e *core.RecordEvent) error {
         itemsCollection, err := e.App.FindCollectionByNameOrId(collections.Items)
         if err != nil {
+            e.App.Logger().Error("Uploads Hooks: failed to find items collection: " + err.Error())
             return e.Next()
         }
 
@@ -20,11 +21,13 @@ func Init(app *pocketbase.PocketBase) error {
         itemRecord.Set("upload", e.Record.Id)
 
         if err := e.App.Save(itemRecord); err != nil {
+            e.App.Logger().Error("Uploads Hooks: failed to create item record: " + err.Error())
             return e.Next()
         }
 
         e.Record.Set("item", itemRecord.Id)
         if err := e.App.Save(e.Record); err != nil {
+            e.App.Logger().Error("Uploads Hooks: failed to update upload record with item ID: " + err.Error())
             return e.Next()
         }
 
