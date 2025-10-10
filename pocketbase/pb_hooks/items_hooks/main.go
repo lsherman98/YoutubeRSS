@@ -34,6 +34,12 @@ func Init(app *pocketbase.PocketBase) error {
 		itemType := itemRecord.GetString("type")
 		user := itemRecord.GetString("user")
 
+		itemRecord.Set("status", "CREATED")
+		if err := e.App.Save(itemRecord); err != nil {
+			e.App.Logger().Error("Items Hooks: failed to update item record status to CREATED: " + err.Error())
+			return e.Next()
+		}
+
 		podcast, err := e.App.FindRecordById(collections.Podcasts, podcastId)
 		if err != nil {
 			e.App.Logger().Error("Items Hooks: failed to find podcast record: " + err.Error())
@@ -89,11 +95,34 @@ func Init(app *pocketbase.PocketBase) error {
 					return
 				}
 
+				fileSize := result.Info.Filesize
+				if fileSize == 0 {
+					fileSize = result.Info.FilesizeApprox
+				}
+				usageLimit := monthlyUsage.GetInt("limit")
+				currentUsage := monthlyUsage.GetInt("usage")
+
+				if currentUsage > usageLimit || (currentUsage+int(fileSize)) > usageLimit {
+					itemRecord.Set("status", "ERROR")
+					itemRecord.Set("error", "Monthly usage limit exceeded")
+					if err := e.App.Save(itemRecord); err != nil {
+						e.App.Logger().Error("Items Hooks: failed to update item record status to ERROR: " + err.Error())
+						return
+					}
+					return
+				}
+
 				videoId := result.Info.ID
 				existingDownload, err := e.App.FindFirstRecordByData(collections.Downloads, "video_id", videoId)
 				if err == nil && existingDownload != nil {
 					download = existingDownload
 				} else {
+					itemRecord.Set("status", "STARTED")
+					if err := e.App.Save(itemRecord); err != nil {
+						e.App.Logger().Error("Items Hooks: failed to update item record status to ERROR: " + err.Error())
+						return
+					}
+
 					audio, path, err := ytdlp.Download(url, download, result)
 					if err != nil {
 						e.App.Logger().Error("Items Hooks: failed to download audio: " + err.Error())
@@ -129,16 +158,40 @@ func Init(app *pocketbase.PocketBase) error {
 					return
 				}
 
-				downloadSize := download.GetInt("size")
-				currentUsage := monthlyUsage.GetInt("usage")
-				monthlyUsage.Set("usage", currentUsage+downloadSize)
+				itemRecord.Set("status", "SUCCESS")
+				if err := e.App.Save(itemRecord); err != nil {
+					e.App.Logger().Error("Items Hooks: failed to update item record status to SUCCESS: " + err.Error())
+					return
+				}
 
+				downloadSize := download.GetInt("size")
+				monthlyUsage.Set("usage", currentUsage+downloadSize)
 				if err := e.App.Save(monthlyUsage); err != nil {
 					e.App.Logger().Error("Items Hooks: failed to update monthly usage: " + err.Error())
 					return
 				}
 			})
 		case "upload":
+			tierId := monthlyUsage.GetString("tier")
+			tier, err := e.App.FindRecordById(collections.SubscriptionTiers, tierId)
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to find subscription tier record: " + err.Error())
+				return e.Next()
+			}
+
+			freeTier := tier.GetString("price_id") == "free"
+			currentUploadCount := monthlyUsage.GetInt("uploads")
+
+			if freeTier && currentUploadCount >= 15 {
+				itemRecord.Set("status", "ERROR")
+				itemRecord.Set("error", "Monthly upload limit reached")
+				if err := e.App.Save(itemRecord); err != nil {
+					e.App.Logger().Error("Items Hooks: failed to update item record status to ERROR: " + err.Error())
+					return e.Next()
+				}
+				return e.Next()
+			}
+
 			upload, err := e.App.FindRecordById(collections.Uploads, itemRecord.GetString("upload"))
 			if err != nil {
 				e.App.Logger().Error("Items Hooks: failed to find upload record: " + err.Error())
@@ -157,7 +210,6 @@ func Init(app *pocketbase.PocketBase) error {
 				}
 			})
 
-			currentUploadCount := monthlyUsage.GetInt("uploads")
 			monthlyUsage.Set("uploads", currentUploadCount+1)
 			if err := e.App.Save(monthlyUsage); err != nil {
 				e.App.Logger().Error("Items Hooks: failed to update monthly usage: " + err.Error())

@@ -8,6 +8,8 @@ require (
 	github.com/mmcdole/gofeed v1.3.0
 	github.com/pocketbase/dbx v1.11.0
 	github.com/pocketbase/pocketbase v0.30.2
+	github.com/stripe/stripe-go/v83 v83.0.1
+	github.com/u2takey/ffmpeg-go v0.5.0
 	github.com/wader/goutubedl v0.0.0-20251006110859-d258bc73a4cb
 )
 
@@ -37,7 +39,6 @@ require (
 	github.com/spf13/cobra v1.10.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
-	github.com/u2takey/ffmpeg-go v0.5.0 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect

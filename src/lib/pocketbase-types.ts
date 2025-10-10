@@ -17,6 +17,10 @@ export enum Collections {
 	Jobs = "jobs",
 	MonthlyUsage = "monthly_usage",
 	Podcasts = "podcasts",
+	StripeCharges = "stripe_charges",
+	StripeCustomers = "stripe_customers",
+	StripeSubscriptions = "stripe_subscriptions",
+	SubscriptionTiers = "subscription_tiers",
 	Uploads = "uploads",
 	Users = "users",
 	WebhookEvents = "webhook_events",
@@ -162,6 +166,8 @@ export type MonthlyUsageRecord = {
 	billing_cycle_start: IsoDateString
 	created?: IsoDateString
 	id: string
+	limit?: number
+	tier?: RecordIdString
 	updated?: IsoDateString
 	uploads?: number
 	usage?: number
@@ -182,6 +188,68 @@ export type PodcastsRecord = {
 	user: RecordIdString
 	website?: string
 	youtube_url?: string
+}
+
+export enum StripeChargesStatusOptions {
+	"succeeded" = "succeeded",
+	"pending" = "pending",
+	"failed" = "failed",
+}
+export type StripeChargesRecord<Tmetadata = unknown> = {
+	amount?: number
+	charge_id?: string
+	created?: IsoDateString
+	customer_id: string
+	id: string
+	metadata?: null | Tmetadata
+	paid?: boolean
+	receipt_url?: string
+	refunded?: boolean
+	status?: StripeChargesStatusOptions
+	user?: RecordIdString
+}
+
+export type StripeCustomersRecord = {
+	created?: IsoDateString
+	customer_id: string
+	email?: string
+	id: string
+	updated?: IsoDateString
+	user: RecordIdString
+}
+
+export type StripeSubscriptionsRecord<Tmetadata = unknown> = {
+	cancel_at?: IsoDateString
+	cancel_at_period_end?: boolean
+	canceled_at?: IsoDateString
+	created?: IsoDateString
+	current_period_end?: IsoDateString
+	current_period_start?: IsoDateString
+	customer_id: string
+	ended_at?: IsoDateString
+	id: string
+	metadata?: null | Tmetadata
+	status?: string
+	subscription_id?: string
+	tier?: RecordIdString
+	updated?: IsoDateString
+	user?: RecordIdString
+}
+
+export enum SubscriptionTiersIntervalOptions {
+	"yearly" = "yearly",
+	"monthly" = "monthly",
+}
+export type SubscriptionTiersRecord = {
+	created?: IsoDateString
+	id: string
+	interval?: SubscriptionTiersIntervalOptions
+	lookup_key?: string
+	monthly_usage_limit?: number
+	price?: number
+	price_id?: string
+	title?: string
+	updated?: IsoDateString
 }
 
 export type UploadsRecord = {
@@ -261,6 +329,10 @@ export type ItemsResponse<Texpand = unknown> = Required<ItemsRecord> & BaseSyste
 export type JobsResponse<Texpand = unknown> = Required<JobsRecord> & BaseSystemFields<Texpand>
 export type MonthlyUsageResponse<Texpand = unknown> = Required<MonthlyUsageRecord> & BaseSystemFields<Texpand>
 export type PodcastsResponse<Texpand = unknown> = Required<PodcastsRecord> & BaseSystemFields<Texpand>
+export type StripeChargesResponse<Tmetadata = unknown, Texpand = unknown> = Required<StripeChargesRecord<Tmetadata>> & BaseSystemFields<Texpand>
+export type StripeCustomersResponse<Texpand = unknown> = Required<StripeCustomersRecord> & BaseSystemFields<Texpand>
+export type StripeSubscriptionsResponse<Tmetadata = unknown, Texpand = unknown> = Required<StripeSubscriptionsRecord<Tmetadata>> & BaseSystemFields<Texpand>
+export type SubscriptionTiersResponse<Texpand = unknown> = Required<SubscriptionTiersRecord> & BaseSystemFields<Texpand>
 export type UploadsResponse<Texpand = unknown> = Required<UploadsRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 export type WebhookEventsResponse<Texpand = unknown> = Required<WebhookEventsRecord> & BaseSystemFields<Texpand>
@@ -280,6 +352,10 @@ export type CollectionRecords = {
 	jobs: JobsRecord
 	monthly_usage: MonthlyUsageRecord
 	podcasts: PodcastsRecord
+	stripe_charges: StripeChargesRecord
+	stripe_customers: StripeCustomersRecord
+	stripe_subscriptions: StripeSubscriptionsRecord
+	subscription_tiers: SubscriptionTiersRecord
 	uploads: UploadsRecord
 	users: UsersRecord
 	webhook_events: WebhookEventsRecord
@@ -298,6 +374,10 @@ export type CollectionResponses = {
 	jobs: JobsResponse
 	monthly_usage: MonthlyUsageResponse
 	podcasts: PodcastsResponse
+	stripe_charges: StripeChargesResponse
+	stripe_customers: StripeCustomersResponse
+	stripe_subscriptions: StripeSubscriptionsResponse
+	subscription_tiers: SubscriptionTiersResponse
 	uploads: UploadsResponse
 	users: UsersResponse
 	webhook_events: WebhookEventsResponse
@@ -319,6 +399,10 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'jobs'): RecordService<JobsResponse>
 	collection(idOrName: 'monthly_usage'): RecordService<MonthlyUsageResponse>
 	collection(idOrName: 'podcasts'): RecordService<PodcastsResponse>
+	collection(idOrName: 'stripe_charges'): RecordService<StripeChargesResponse>
+	collection(idOrName: 'stripe_customers'): RecordService<StripeCustomersResponse>
+	collection(idOrName: 'stripe_subscriptions'): RecordService<StripeSubscriptionsResponse>
+	collection(idOrName: 'subscription_tiers'): RecordService<SubscriptionTiersResponse>
 	collection(idOrName: 'uploads'): RecordService<UploadsResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>
 	collection(idOrName: 'webhook_events'): RecordService<WebhookEventsResponse>

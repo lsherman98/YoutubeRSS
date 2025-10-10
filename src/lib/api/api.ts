@@ -163,3 +163,22 @@ export async function getWebhookEvents() {
         sort: "-created",
     });
 }
+
+export type SubscriptionType = "basicMonthly" | "basicYearly" | "powerUserMonthly" | "powerUserYearly" | "professionalMonthly" | "professionalYearly"
+export const createCheckoutSession = async (subscriptionType: SubscriptionType) => {
+    if (!getUserId()) return
+
+    return await pb.send('/stripe/create-checkout-session', {
+        method: 'GET',
+        query: { subscriptionType }
+    });
+
+}
+
+export const createPortalSession = async () => {
+    if (!getUserId()) return
+
+    return await pb.send('/stripe/create-portal-session', {
+        method: 'GET'
+    });
+}

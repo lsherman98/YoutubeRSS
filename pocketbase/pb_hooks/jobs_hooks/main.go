@@ -39,6 +39,15 @@ func Init(app *pocketbase.PocketBase) error {
 
 		download := core.NewRecord(downloads)
 
+		monthlyUsage, err := e.App.FindFirstRecordByFilter(collections.MonthlyUsage, "user = {:user} && billing_cycle_end > {:now}", dbx.Params{
+			"user": user,
+			"now":  time.Now().UTC().Format(time.RFC3339),
+		})
+		if err != nil || monthlyUsage == nil {
+			e.App.Logger().Error("Jobs Hooks: failed to find monthly usage record: " + err.Error())
+			return e.Next()
+		}
+
 		webhookClient := webhook_client.New(user, e.App, job)
 		if webhookClient != nil {
 			webhookClient.Send("CREATED")
@@ -64,6 +73,26 @@ func Init(app *pocketbase.PocketBase) error {
 			result, err := ytdlp.GetInfo(url)
 			if err != nil {
 				e.App.Logger().Error("Jobs Hooks: failed to get video info: " + err.Error())
+				return
+			}
+
+			downloadSize := result.Info.Filesize
+			if downloadSize == 0 {
+				downloadSize = result.Info.FilesizeApprox
+			}
+			usageLimit := monthlyUsage.GetInt("limit")
+			currentUsage := monthlyUsage.GetInt("usage")
+
+			if currentUsage > usageLimit || (currentUsage+int(downloadSize)) > usageLimit {
+				job.Set("status", "ERROR")
+				job.Set("error", "Monthly usage limit exceeded")
+				if err := e.App.Save(job); err != nil {
+					e.App.Logger().Error("Jobs Hooks: failed to update job status to ERROR: " + err.Error())
+					return
+				}
+				if webhookClient != nil {
+					webhookClient.Send("ERROR")
+				}
 				return
 			}
 
@@ -112,19 +141,7 @@ func Init(app *pocketbase.PocketBase) error {
 				webhookClient.Send("SUCCESS")
 			}
 
-			monthlyUsage, err := e.App.FindFirstRecordByFilter(collections.MonthlyUsage, "user = {:user} && billing_cycle_end > {:now}", dbx.Params{
-				"user": user,
-				"now":  time.Now().UTC().Format(time.RFC3339),
-			})
-			if err != nil || monthlyUsage == nil {
-				e.App.Logger().Error("Jobs Hooks: failed to find monthly usage record: " + err.Error())
-				return
-			}
-
-			downloadSize := download.GetInt("size")
-			currentUsage := monthlyUsage.GetInt("usage")
-			monthlyUsage.Set("usage", currentUsage+downloadSize)
-
+			monthlyUsage.Set("usage", currentUsage+int(downloadSize))
 			if err := e.App.Save(monthlyUsage); err != nil {
 				e.App.Logger().Error("Jobs Hooks: failed to update monthly usage: " + err.Error())
 				return

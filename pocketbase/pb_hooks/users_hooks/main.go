@@ -18,10 +18,24 @@ func Init(app *pocketbase.PocketBase) error {
 			return e.Next()
 		}
 
+		freeTier, err := e.App.FindFirstRecordByData(collections.SubscriptionTiers, "price_key", "free")
+		if err != nil {
+			e.App.Logger().Error("Users Hooks: failed to find free subscription tier: " + err.Error())
+			return e.Next()
+		}
+
+		e.Record.Set("tier", freeTier.Id)
+		if err := e.App.Save(e.Record); err != nil {
+			e.App.Logger().Error("Users Hooks: failed to set user tier: " + err.Error())
+			return e.Next()
+		}
+
 		usageRecord := core.NewRecord(monthlyUsageCollection)
 		usageRecord.Set("user", userId)
 		usageRecord.Set("billing_cycle_start", time.Now().UTC().Format(time.RFC3339))
 		usageRecord.Set("billing_cycle_end", time.Now().AddDate(0, 1, 0).UTC().Format(time.RFC3339))
+		usageRecord.Set("tier", freeTier.Id)
+		usageRecord.Set("limit", freeTier.Get("monthly_usage_limit"))
 		if err := e.App.Save(usageRecord); err != nil {
 			e.App.Logger().Error("Users Hooks: failed to create monthly usage record: " + err.Error())
 			return e.Next()

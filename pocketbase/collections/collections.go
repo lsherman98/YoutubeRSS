@@ -11,4 +11,8 @@ const (
 	Webhooks      = "webhooks"
 	WebhookEvents = "webhook_events"
 	MonthlyUsage  = "monthly_usage"
+	SubscriptionTiers = "subscription_tiers"
+	StripeCharges = "stripe_charges"
+	StripeCustomers = "stripe_customers"
+	StripeSubscriptions = "stripe_subscriptions"
 )

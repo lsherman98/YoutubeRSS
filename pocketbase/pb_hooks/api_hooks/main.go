@@ -69,6 +69,22 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.UnauthorizedError("Invalid API key", map[string]any{})
 			}
 
+			userId := apiKeyRecord.GetString("user")
+			user, err := e.App.FindAuthOriginById(userId)
+			if err != nil || user == nil {
+				return e.UnauthorizedError("Invalid API key", map[string]any{})
+			}
+
+			tierId := user.GetString("tier")
+			tier, err := e.App.FindRecordById(collections.SubscriptionTiers, tierId)
+			if err != nil || tier == nil {
+				return e.InternalServerError("something went wrong", map[string]any{})
+			}
+
+			if tier.GetString("price_id") == "free" {
+				return e.ForbiddenError("Free tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
+			}
+
 			if len(body.URLs) == 0 || len(body.URLs) > URLsLimit {
 				return e.BadRequestError("Invalid number of URLs, must be between 1 and "+string(rune(URLsLimit)), map[string]any{})
 			}
@@ -277,6 +293,22 @@ func Init(app *pocketbase.PocketBase) error {
 			apiKeyRecord, err := app.FindFirstRecordByData(apiKeysCollection, "hashed_key", hashedAPIKey)
 			if err != nil || apiKeyRecord == nil {
 				return e.UnauthorizedError("Invalid API key", map[string]any{})
+			}
+
+			userId := apiKeyRecord.GetString("user")
+			user, err := e.App.FindAuthOriginById(userId)
+			if err != nil || user == nil {
+				return e.UnauthorizedError("Invalid API key", map[string]any{})
+			}
+
+			tierId := user.GetString("tier")
+			tier, err := e.App.FindRecordById(collections.SubscriptionTiers, tierId)
+			if err != nil || tier == nil {
+				return e.InternalServerError("something went wrong", map[string]any{})
+			}
+
+			if tier.GetString("price_id") == "free" {
+				return e.ForbiddenError("Free tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
 			}
 
 			job, err := e.App.FindRecordById(collections.Jobs, jobId)
