@@ -41,7 +41,7 @@ func Init(app pocketbase.PocketBase) error {
 
 			lookupKey := tier.GetString("lookup_key")
 			usageLimit := tier.GetInt("monthly_usage_limit")
-			if lookupKey == "professional_subscription_yearly" || lookupKey == "professional_subscription_monthly" {
+			if lookupKey == "professional_yearly" || lookupKey == "professional_monthly" {
 				prevUsage := record.GetInt("usage")
 				prevLimit := record.GetInt("limit")
 				newUsageRecord.Set("limit", usageLimit + (prevLimit - prevUsage))

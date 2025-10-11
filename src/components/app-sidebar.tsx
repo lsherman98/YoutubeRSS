@@ -18,7 +18,8 @@ import { useGetUsage } from "@/lib/api/queries";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: usage } = useGetUsage();
-  const freeTier = usage?.expand?.tier.lookup_key === "free";
+  const tierLookupKey = usage?.expand?.tier.lookup_key;
+  const freeTier = tierLookupKey === "free";
 
   const data = {
     navMain: [

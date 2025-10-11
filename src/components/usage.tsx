@@ -4,7 +4,9 @@ import { formatFileSize } from "@/lib/utils";
 
 export function Usage() {
   const { data: usage } = useGetUsage();
-  const freeTier = usage?.expand?.tier.lookup_key === "free";
+  const tierLookupKey = usage?.expand?.tier.lookup_key;
+  const freeTier = tierLookupKey === "free";
+  const basicTier = tierLookupKey === "basic_monthly" || tierLookupKey === "basic_yearly";
 
   if (!usage) {
     return null;
@@ -15,8 +17,8 @@ export function Usage() {
   const percentage = limit > 0 ? (currentUsage / limit) * 100 : 0;
 
   const currentUploads = usage.uploads ?? 0;
-  const uploadsLimit = 15;
-  const uploadsPercentage = (currentUploads / uploadsLimit) * 100;
+  const uploadsLimit = freeTier ? 15 : basicTier ? 50 : 0;
+  const uploadsPercentage = uploadsLimit > 0 ? (currentUploads / uploadsLimit) * 100 : 0;
 
   return (
     <div className="space-y-3 px-3 py-2">
@@ -29,7 +31,7 @@ export function Usage() {
         </div>
         <Progress value={percentage} />
       </div>
-      {freeTier && (
+      {(freeTier || basicTier) && (
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">File Uploads</span>

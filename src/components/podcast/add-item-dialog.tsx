@@ -28,14 +28,16 @@ export function AddItemDialog({ podcastId }: AddItemDialogProps) {
   const [audioUploads, setAudioUploads] = useState<AudioUpload[]>([]);
 
   const { data: usage } = useGetUsage();
-  const freeTier = usage?.expand?.tier.lookup_key === "free";
+  const tierLookupKey = usage?.expand?.tier.lookup_key;
+  const freeTier = tierLookupKey === "free";
+  const basicTier = tierLookupKey === "basic_monthly" || tierLookupKey === "basic_yearly";
   const currentUsage = usage?.usage ?? 0;
   const usageLimit = usage?.limit ?? 0;
   const usageLimitReached = currentUsage >= usageLimit;
 
   const currentUploads = usage?.uploads ?? 0;
-  const uploadsLimit = 15;
-  const uploadLimitReached = freeTier && currentUploads >= uploadsLimit;
+  const uploadsLimit = freeTier ? 15 : basicTier ? 50 : Infinity;
+  const uploadLimitReached = (freeTier || basicTier) && currentUploads >= uploadsLimit;
 
   const addYoutubeUrlsMutation = useAddYoutubeUrls();
 
