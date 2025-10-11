@@ -1,11 +1,14 @@
 package users_hooks
 
 import (
+	"os"
 	"time"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/stripe/stripe-go/v83"
+	"github.com/stripe/stripe-go/v83/subscription"
 )
 
 func Init(app *pocketbase.PocketBase) error {
@@ -38,6 +41,30 @@ func Init(app *pocketbase.PocketBase) error {
 		usageRecord.Set("limit", freeTier.Get("monthly_usage_limit"))
 		if err := e.App.Save(usageRecord); err != nil {
 			e.App.Logger().Error("Users Hooks: failed to create monthly usage record: " + err.Error())
+			return e.Next()
+		}
+
+		return e.Next()
+	})
+
+	app.OnRecordAfterDeleteSuccess(collections.Users).BindFunc(func(e *core.RecordEvent) error {
+		stripe.Key = os.Getenv("STRIPE_API_KEY")
+		stripeTest := os.Getenv("STRIPE_TEST") == "true"
+		if stripeTest {
+			stripe.Key = os.Getenv("TEST_STRIPE_API_KEY")
+		}
+
+		subscriptionRecord, err := e.App.FindFirstRecordByData(collections.StripeSubscriptions, "user", e.Record.Id)
+		if err != nil {
+			return e.Next()
+		}
+
+		subscriptionId := subscriptionRecord.GetString("subscription_id")
+
+		params := &stripe.SubscriptionCancelParams{}
+		_, err = subscription.Cancel(subscriptionId, params)
+		if err != nil {
+			e.App.Logger().Error("Users Hooks: failed to cancel stripe subscription: " + err.Error())
 			return e.Next()
 		}
 

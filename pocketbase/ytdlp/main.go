@@ -29,27 +29,35 @@ func New(app core.App) *Client {
 	}
 
 	proxy := os.Getenv("PROXY")
-	if proxy == "ngrok" {
+	switch proxy {
+	case "ngrok":
 		return &Client{
 			App:      app,
 			ProxyURL: os.Getenv("NGROK_PROXY"),
 		}
+	case "oxylabs":
+		return &Client{
+			App:      app,
+			ProxyURL: os.Getenv("OXY_LABS_PROXY_URL"),
+		}
+	case "iproyal":
+		host := os.Getenv("IP_ROYAL_PROXY_HOST")
+		auth := os.Getenv("IP_ROYAL_PROXY_AUTH")
+		url, err := u.Parse(fmt.Sprintf("http://%s@%s", auth, host))
+		if err != nil {
+			app.Logger().Error("YTDLP: failed to parse proxy URL", "error", err)
+			return nil
+		}
+
+		return &Client{
+			App:       app,
+			ProxyHost: host,
+			ProxyAuth: auth,
+			ProxyURL:  url.String(),
+		}
 	}
 
-	host := os.Getenv("IP_ROYAL_PROXY_HOST")
-	auth := os.Getenv("IP_ROYAL_PROXY_AUTH")
-	url, err := u.Parse(fmt.Sprintf("http://%s@%s", auth, host))
-	if err != nil {
-		app.Logger().Error("YTDLP: failed to parse proxy URL", "error", err)
-		return nil
-	}
-
-	return &Client{
-		App:       app,
-		ProxyHost: host,
-		ProxyAuth: auth,
-		ProxyURL:  url.String(),
-	}
+	return &Client{}
 }
 
 func (c *Client) GetInfo(url string) (*goutubedl.Result, error) {

@@ -12,6 +12,8 @@ import { useState } from "react";
 import { useCreateJobs } from "@/lib/api/mutations";
 import { YoutubeUrlInput, YoutubeURLsFormSchema } from "@/components/youtube-url-input";
 import type z from "zod";
+import { useGetUsage } from "@/lib/api/queries";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CreateJobDialogProps {
   isOpen: boolean;
@@ -23,6 +25,11 @@ type YouTubeUrlItem = { url: string };
 export function CreateJobDialog({ isOpen, onOpenChange }: CreateJobDialogProps) {
   const [youtubeUrls, setYoutubeUrls] = useState<YouTubeUrlItem[]>([{ url: "" }]);
   const createJobsMutation = useCreateJobs();
+
+  const { data: usage } = useGetUsage();
+  const currentUsage = usage?.usage ?? 0;
+  const usageLimit = usage?.limit ?? 0;
+  const usageLimitReached = currentUsage >= usageLimit;
 
   const handleSubmit = (data: z.infer<typeof YoutubeURLsFormSchema>) => {
     const urls = data.youtubeUrls.filter((item) => item.url.trim() !== "").map((item) => item.url.trim());
@@ -40,12 +47,25 @@ export function CreateJobDialog({ isOpen, onOpenChange }: CreateJobDialogProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Jobs
-        </Button>
-      </DialogTrigger>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <DialogTrigger asChild>
+                <Button disabled={usageLimitReached}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Jobs
+                </Button>
+              </DialogTrigger>
+            </div>
+          </TooltipTrigger>
+          {usageLimitReached && (
+            <TooltipContent>
+              <p>Usage limit reached. Upgrade your plan to create more jobs.</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
       <DialogContent className="max-w-3xl h-[600px] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">

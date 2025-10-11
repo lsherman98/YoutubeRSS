@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { pb } from "@/lib/pocketbase";
-import { CircleUser, CreditCard, EllipsisVertical, LogOut } from "lucide-react";
+import { CircleUser, EllipsisVertical, LogOut } from "lucide-react";
 
 export function NavUser({ email }: { email: string }) {
   const { isMobile } = useSidebar();
@@ -58,10 +58,6 @@ export function NavUser({ email }: { email: string }) {
               <DropdownMenuItem>
                 <CircleUser />
                 Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

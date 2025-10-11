@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDeletePodcastItem } from "@/lib/api/mutations";
-import { formatDuration } from "@/lib/utils";
+import { formatDuration, formatFileSize } from "@/lib/utils";
 import type { ItemsResponse } from "@/lib/pocketbase-types";
 import { ItemsTypeOptions } from "@/lib/pocketbase-types";
 import type { ExpandItem } from "@/lib/api/api";
@@ -39,6 +39,7 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
             <TableHead>Duration</TableHead>
             <TableHead>Channel</TableHead>
             <TableHead>Url</TableHead>
+            <TableHead>Size</TableHead>
             <TableHead>Added</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -94,6 +95,7 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
                     )}
                   </TableCell>
                   <TableCell>{new Date(item.created).toLocaleDateString()}</TableCell>
+                  <TableCell>{data.size ? formatFileSize(data.size) : "-"}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

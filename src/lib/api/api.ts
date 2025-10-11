@@ -1,5 +1,5 @@
 import { pb } from "../pocketbase";
-import { Collections, ItemsTypeOptions, JobsStatusOptions, type DownloadsResponse, type ItemsResponse, type JobsResponse, type PodcastsRecord, type UploadsResponse, type WebhooksRecord } from "../pocketbase-types";
+import { Collections, ItemsTypeOptions, JobsStatusOptions, type DownloadsResponse, type ItemsResponse, type JobsResponse, type MonthlyUsageResponse, type PodcastsRecord, type SubscriptionTiersResponse, type UploadsResponse, type WebhooksRecord } from "../pocketbase-types";
 import { getUserId } from "../utils";
 
 export async function addYoutubeUrls(urls: string[], podcastId: string) {
@@ -134,8 +134,12 @@ export async function getJobs() {
     });
 }
 
+type UsageExpand = {
+    tier: SubscriptionTiersResponse
+}
+
 export async function getUsage() {
-    return await pb.collection(Collections.MonthlyUsage).getFirstListItem(`billing_cycle_end >= "${new Date().toISOString()}"`)
+    return await pb.collection<MonthlyUsageResponse<UsageExpand>>(Collections.MonthlyUsage).getFirstListItem(`billing_cycle_end >= "${new Date().toISOString()}"`, { expand: "tier" });
 }
 
 export async function createWebhook(data: Partial<WebhooksRecord>) {

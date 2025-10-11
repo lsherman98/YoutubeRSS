@@ -129,11 +129,19 @@ export enum ItemsTypeOptions {
 	"upload" = "upload",
 	"url" = "url",
 }
+
+export enum ItemsStatusOptions {
+	"CREATED" = "CREATED",
+	"SUCCESS" = "SUCCESS",
+	"ERROR" = "ERROR",
+}
 export type ItemsRecord = {
 	created?: IsoDateString
 	download?: RecordIdString
+	error?: string
 	id: string
 	podcast: RecordIdString
+	status: ItemsStatusOptions
 	type: ItemsTypeOptions
 	updated?: IsoDateString
 	upload?: RecordIdString
@@ -248,6 +256,7 @@ export type SubscriptionTiersRecord = {
 	monthly_usage_limit?: number
 	price?: number
 	price_id?: string
+	test_price_id?: string
 	title?: string
 	updated?: IsoDateString
 }
@@ -272,6 +281,7 @@ export type UsersRecord = {
 	id: string
 	name: string
 	password: string
+	tier?: RecordIdString
 	tokenKey: string
 	updated?: IsoDateString
 	verified?: boolean

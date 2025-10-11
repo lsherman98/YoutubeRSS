@@ -7,6 +7,7 @@ import type { ExpandJobs } from "@/lib/api/api";
 import { pb } from "@/lib/pocketbase";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatFileSize } from "@/lib/utils";
 
 interface JobsTableProps {
   jobs: JobsResponse<ExpandJobs>[];
@@ -71,6 +72,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
             <TableHead>URL</TableHead>
             <TableHead>Title</TableHead>
             <TableHead>Channel</TableHead>
+            <TableHead>Size</TableHead>
             <TableHead>Created</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -120,6 +122,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
                 <TableCell className="max-w-[200px] truncate" title={job.expand?.download?.channel}>
                   {job.expand?.download?.channel || "-"}
                 </TableCell>
+                <TableCell>{job.expand?.download?.size ? formatFileSize(job.expand.download.size) : "-"}</TableCell>
                 <TableCell>{new Date(job.created).toLocaleString()}</TableCell>
                 <TableCell>
                   {job.status === JobsStatusOptions.SUCCESS && job.download ? (
