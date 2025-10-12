@@ -172,7 +172,7 @@ export type SubscriptionType = "basicMonthly" | "basicYearly" | "powerUserMonthl
 export const createCheckoutSession = async (subscriptionType: SubscriptionType) => {
     if (!getUserId()) return
 
-    return await pb.send('/stripe/create-checkout-session', {
+    return await pb.send('/api/stripe/create-checkout-session', {
         method: 'GET',
         query: { subscriptionType }
     });
@@ -182,7 +182,7 @@ export const createCheckoutSession = async (subscriptionType: SubscriptionType) 
 export const createPortalSession = async () => {
     if (!getUserId()) return
 
-    return await pb.send('/stripe/create-portal-session', {
+    return await pb.send('/api/stripe/create-portal-session', {
         method: 'GET'
     });
 }

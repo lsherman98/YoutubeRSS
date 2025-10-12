@@ -16,7 +16,7 @@ function SubscriptionPage() {
   const { data: usage } = useGetUsage();
   const checkoutMutation = useCreateCheckoutSession();
   const portalMutation = useCreatePortalSession();
-  const [isYearly, setIsYearly] = useState(true);
+  const [isYearly, setIsYearly] = useState(false);
 
   const currentTier = usage?.expand?.tier?.lookup_key || "free";
   const isPaidUser = currentTier !== "free";
@@ -87,8 +87,8 @@ function SubscriptionPage() {
                 </li>
               </ul>
               <Link to="/podcasts">
-                <Button className="w-full" variant="outline">
-                  {currentTier === "free" ? "Current Plan" : "Cancel Current Plan"}
+                <Button className="w-full" variant={currentTier === "free" ? "outline" : "default"}>
+                  {currentTier === "free" ? "Current Plan" : "Downgrade to Free"}
                 </Button>
               </Link>
             </CardContent>

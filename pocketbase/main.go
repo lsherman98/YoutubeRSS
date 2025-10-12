@@ -14,6 +14,7 @@ import (
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/jobs_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/podcast_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/share_url_hooks"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/stripe_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/uploads_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/users_hooks"
 	"github.com/pocketbase/pocketbase"
@@ -62,6 +63,10 @@ func main() {
 	}
 
 	if err := users_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := stripe_hooks.Init(app); err != nil {
 		log.Fatal(err)
 	}
 

@@ -21,7 +21,7 @@ func Init(app *pocketbase.PocketBase) error {
 			return e.Next()
 		}
 
-		freeTier, err := e.App.FindFirstRecordByData(collections.SubscriptionTiers, "price_key", "free")
+		freeTier, err := e.App.FindFirstRecordByData(collections.SubscriptionTiers, "price_id", "free")
 		if err != nil {
 			e.App.Logger().Error("Users Hooks: failed to find free subscription tier: " + err.Error())
 			return e.Next()

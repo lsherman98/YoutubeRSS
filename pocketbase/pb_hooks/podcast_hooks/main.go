@@ -4,6 +4,7 @@ import (
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/lsherman98/yt-rss/pocketbase/files"
 	"github.com/lsherman98/yt-rss/pocketbase/rss_utils"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/filesystem"
@@ -11,6 +12,31 @@ import (
 
 func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordCreateRequest(collections.Podcasts).BindFunc(func(e *core.RecordRequestEvent) error {
+
+		user, err := e.App.FindRecordById(collections.Users, e.Auth.Id)
+		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to find user", "error", err)
+			return e.Next()
+		}
+
+		tier, err := e.App.FindRecordById(collections.SubscriptionTiers, user.GetString("tier"))
+		if err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to find subscription tier", "error", err)
+			return e.Next()
+		}
+
+		if tier.GetString("lookup_key") == "free" {
+			podcastCount, err := e.App.FindRecordsByFilter(collections.Podcasts, "user = {:user}", "", 0, 0, dbx.Params{"user": e.Auth.Id})
+			if err != nil {
+				e.App.Logger().Error("Podcast Hooks: failed to count user podcasts", "error", err)
+				return e.Next()
+			}
+
+			if len(podcastCount) >= 1 {
+				return e.ForbiddenError("Free tier users can only create 1 podcast. Please upgrade your subscription to create more podcasts.", nil)
+			}
+		}
+
 		podcast := e.Record
 		title := podcast.GetString("title")
 		description := podcast.GetString("description")

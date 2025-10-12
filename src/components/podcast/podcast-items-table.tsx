@@ -53,7 +53,7 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
               ) {
                 return (
                   <TableRow key={item.id}>
-                    <TableCell colSpan={7} className="text-center">
+                    <TableCell colSpan={8} className="text-center">
                       <div className="flex items-center justify-center py-2 bg-gray-100 rounded">
                         <LoaderCircle className="h-6 w-6 animate-spin mr-2" />
                         Loading...

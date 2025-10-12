@@ -1,4 +1,4 @@
-package stripe_webhooks
+package stripe_hooks
 
 import (
 	"encoding/json"
@@ -63,7 +63,7 @@ func Init(app *pocketbase.PocketBase) error {
 			return err
 		}
 
-		se.Router.POST("/webhooks/stripe", func(e *core.RequestEvent) error {
+		se.Router.POST("/api/webhooks/stripe", func(e *core.RequestEvent) error {
 			payload, err := io.ReadAll(e.Request.Body)
 			if err != nil {
 				return e.BadRequestError("failed to read request body", err)
@@ -86,7 +86,7 @@ func Init(app *pocketbase.PocketBase) error {
 				if err := json.Unmarshal(event.Data.Raw, &subscription); err != nil {
 					return e.BadRequestError("failed to unmarshal customer.subscription.created event", err)
 				}
-				if err := updateSubscriptionRecord(e, subscription, subscriptionsCollection, customersCollection); err != nil {
+				if err := updateSubscriptionRecord(e, subscription, subscriptionsCollection); err != nil {
 					return e.BadRequestError("failed to update subscription record", err)
 				}
 			case "customer.subscription.updated":
@@ -94,7 +94,7 @@ func Init(app *pocketbase.PocketBase) error {
 				if err := json.Unmarshal(event.Data.Raw, &subscription); err != nil {
 					return e.BadRequestError("failed to unmarshal customer.subscription.updated event", err)
 				}
-				if err := updateSubscriptionRecord(e, subscription, subscriptionsCollection, customersCollection); err != nil {
+				if err := updateSubscriptionRecord(e, subscription, subscriptionsCollection); err != nil {
 					return e.BadRequestError("failed to update subscription record", err)
 				}
 			case "customer.subscription.deleted":
@@ -102,7 +102,7 @@ func Init(app *pocketbase.PocketBase) error {
 				if err := json.Unmarshal(event.Data.Raw, &subscription); err != nil {
 					return e.BadRequestError("failed to unmarshal customer.subscription.deleted event", err)
 				}
-				if err := updateSubscriptionRecord(e, subscription, subscriptionsCollection, customersCollection); err != nil {
+				if err := updateSubscriptionRecord(e, subscription, subscriptionsCollection); err != nil {
 					return e.BadRequestError("failed to update subscription record", err)
 				}
 			case "charge.succeeded":
@@ -110,7 +110,7 @@ func Init(app *pocketbase.PocketBase) error {
 				if err := json.Unmarshal(event.Data.Raw, &charge); err != nil {
 					return e.BadRequestError("failed to unmarshal charge.succeeded event", err)
 				}
-				if err := handleChargeSucceeded(e, charge, chargesCollection, customersCollection); err != nil {
+				if err := handleChargeSucceeded(e, charge, chargesCollection); err != nil {
 					return e.BadRequestError("failed to handle charge.succeeded", err)
 				}
 			default:
@@ -121,7 +121,7 @@ func Init(app *pocketbase.PocketBase) error {
 			return nil
 		})
 
-		se.Router.GET("/stripe/create-checkout-session", func(e *core.RequestEvent) error {
+		se.Router.GET("/api/stripe/create-checkout-session", func(e *core.RequestEvent) error {
 			user := e.Auth.Id
 			email := e.Auth.Email()
 			subscriptionType := e.Request.URL.Query().Get("subscriptionType")
@@ -177,7 +177,7 @@ func Init(app *pocketbase.PocketBase) error {
 				},
 				Mode:       stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 				SuccessURL: stripe.String(domain + "/podcasts"),
-				CancelURL:  stripe.String(domain + "/subscription"),
+				CancelURL:  stripe.String(domain + "/subscriptions"),
 				Customer:   stripe.String(customerRecord.GetString("customer_id")),
 			}
 
@@ -191,7 +191,7 @@ func Init(app *pocketbase.PocketBase) error {
 			return nil
 		}).Bind(apis.RequireAuth())
 
-		se.Router.GET("/stripe/create-portal-session", func(e *core.RequestEvent) error {
+		se.Router.GET("/api/stripe/create-portal-session", func(e *core.RequestEvent) error {
 			userId := e.Auth.Id
 			customer, err := e.App.FindFirstRecordByData(customersCollection.Name, "user", userId)
 			if err != nil {
@@ -200,7 +200,7 @@ func Init(app *pocketbase.PocketBase) error {
 
 			params := &stripe.BillingPortalSessionParams{
 				Customer:  stripe.String(customer.GetString("customer_id")),
-				ReturnURL: stripe.String(domain + "/subscription"),
+				ReturnURL: stripe.String(domain + "/subscriptions"),
 			}
 
 			s, err := portal.New(params)
@@ -219,19 +219,19 @@ func Init(app *pocketbase.PocketBase) error {
 	return nil
 }
 
-func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscription, subscriptionsCollection, customersCollection *core.Collection) error {
+func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscription, subscriptionsCollection *core.Collection) error {
 	var subscriptionRecord *core.Record
-	subscriptionRecord, err := e.App.FindFirstRecordByData(subscriptionsCollection.Name, "subscription_id", subscription.ID)
+	subscriptionRecord, err := e.App.FindFirstRecordByData(collections.StripeSubscriptions, "subscription_id", subscription.ID)
 	if err != nil {
 		subscriptionRecord = core.NewRecord(subscriptionsCollection)
 	}
 
-	customer, err := e.App.FindFirstRecordByData(customersCollection.Name, "customer_id", subscription.Customer.ID)
+	customer, err := e.App.FindFirstRecordByData(collections.StripeCustomers, "customer_id", subscription.Customer.ID)
 	if err != nil {
 		return err
 	}
 
-	user, err := e.App.FindRecordById("users", customer.GetString("user"))
+	user, err := e.App.FindRecordById(collections.Users, customer.GetString("user"))
 	if err != nil {
 		return err
 	}
@@ -242,9 +242,16 @@ func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscrip
 		priceId = "free"
 	}
 
-	tier, err := e.App.FindFirstRecordByData(collections.SubscriptionTiers, "price_id", priceId)
+	var field string
+	if os.Getenv("STRIPE_TEST") == "true" {
+		field = "test_price_id"
+	} else {
+		field = "price_id"
+	}
+
+	tier, err := e.App.FindFirstRecordByData(collections.SubscriptionTiers, field, priceId)
 	if err != nil {
-		e.App.Logger().Error("Users Hooks: failed to find free subscription tier: " + err.Error())
+		e.App.Logger().Error("Stripe Hooks: failed to find subscription tier: " + err.Error())
 	}
 
 	usageRecord, err := e.App.FindFirstRecordByFilter(collections.MonthlyUsage, "user = {:user} && billing_cycle_end > {:now}", dbx.Params{"user": user.Id, "now": time.Now().UTC().Format(time.RFC3339)})
@@ -258,6 +265,8 @@ func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscrip
 		usageRecord.Set("billing_cycle_start", time.Unix(subscription.Items.Data[0].CurrentPeriodStart, 0).UTC().Format(time.RFC3339))
 		usageRecord.Set("billing_cycle_end", time.Unix(subscription.Items.Data[0].CurrentPeriodEnd, 0).UTC().Format(time.RFC3339))
 	}
+
+	user.Set("tier", tier.Id)
 
 	subscriptionRecord.Set("tier", tier.Id)
 	subscriptionRecord.Set("subscription_id", subscription.ID)
@@ -276,15 +285,20 @@ func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscrip
 	if err := e.App.Save(user); err != nil {
 		return err
 	}
+
 	if err := e.App.Save(subscriptionRecord); err != nil {
+		return err
+	}
+
+	if err := e.App.Save(usageRecord); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func handleChargeSucceeded(e *core.RequestEvent, charge stripe.Charge, chargesCollection, customersCollection *core.Collection) error {
-	user, err := e.App.FindFirstRecordByData(customersCollection.Name, "customer_id", charge.Customer.ID)
+func handleChargeSucceeded(e *core.RequestEvent, charge stripe.Charge, chargesCollection *core.Collection) error {
+	user, err := e.App.FindFirstRecordByData(collections.StripeCustomers, "customer_id", charge.Customer.ID)
 	if err != nil {
 		return e.BadRequestError("failed to find customer", err)
 	}
