@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -86,11 +86,14 @@ function SubscriptionPage() {
                   <span className="text-sm">No API access</span>
                 </li>
               </ul>
-              <Link to="/podcasts">
-                <Button className="w-full" variant={currentTier === "free" ? "outline" : "default"}>
-                  {currentTier === "free" ? "Current Plan" : "Downgrade to Free"}
-                </Button>
-              </Link>
+              <Button
+                className="w-full"
+                variant={currentTier === "free" ? "outline" : "default"}
+                disabled={currentTier === "free"}
+                onClick={handleManageSubscription}
+              >
+                {currentTier === "free" ? "Current Plan" : "Downgrade to Free"}
+              </Button>
             </CardContent>
           </Card>
           <Card className="relative flex flex-col h-full">
@@ -131,7 +134,9 @@ function SubscriptionPage() {
                 </li>
               </ul>
               <Button
-                onClick={() => handleUpgrade("basic")}
+                onClick={() => {
+                  currentTier === "free" ? handleUpgrade("basic") : handleManageSubscription();
+                }}
                 className="w-full"
                 disabled={checkoutMutation.isPending || portalMutation.isPending}
                 variant={currentTier === "basic_monthly" || currentTier === "basic_yearly" ? "outline" : "default"}
@@ -185,7 +190,9 @@ function SubscriptionPage() {
                 </li>
               </ul>
               <Button
-                onClick={() => handleUpgrade("powerUser")}
+                onClick={() => {
+                  currentTier === "free" ? handleUpgrade("powerUser") : handleManageSubscription();
+                }}
                 className="w-full"
                 disabled={checkoutMutation.isPending || portalMutation.isPending}
                 variant={
@@ -246,7 +253,9 @@ function SubscriptionPage() {
                 </li>
               </ul>
               <Button
-                onClick={() => handleUpgrade("professional")}
+                onClick={() => {
+                  currentTier === "free" ? handleUpgrade("professional") : handleManageSubscription();
+                }}
                 className="w-full"
                 disabled={checkoutMutation.isPending || portalMutation.isPending}
                 variant={
@@ -262,13 +271,6 @@ function SubscriptionPage() {
             </CardContent>
           </Card>
         </div>
-        {isPaidUser && (
-          <div className="mt-8 text-center">
-            <Button variant="outline" onClick={handleManageSubscription} disabled={portalMutation.isPending}>
-              Manage Subscription & Billing
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
