@@ -12,7 +12,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWebhooksIndexRouteImport } from './routes/_app/webhooks/index'
 import { Route as AppSubscriptionsIndexRouteImport } from './routes/_app/subscriptions/index'
 import { Route as AppPodcastsIndexRouteImport } from './routes/_app/podcasts/index'
@@ -31,10 +31,10 @@ const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppWebhooksIndexRoute = AppWebhooksIndexRouteImport.update({
   id: '/webhooks/',
@@ -68,8 +68,8 @@ const AppPodcastsIdRoute = AppPodcastsIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/signin': typeof SigninLazyRoute
-  '/': typeof AppIndexRoute
   '/podcasts/$id': typeof AppPodcastsIdRoute
   '/jobs': typeof AppJobsIndexRoute
   '/keys': typeof AppKeysIndexRoute
@@ -78,8 +78,8 @@ export interface FileRoutesByFullPath {
   '/webhooks': typeof AppWebhooksIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/signin': typeof SigninLazyRoute
-  '/': typeof AppIndexRoute
   '/podcasts/$id': typeof AppPodcastsIdRoute
   '/jobs': typeof AppJobsIndexRoute
   '/keys': typeof AppKeysIndexRoute
@@ -89,9 +89,9 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/signin': typeof SigninLazyRoute
-  '/_app/': typeof AppIndexRoute
   '/_app/podcasts/$id': typeof AppPodcastsIdRoute
   '/_app/jobs/': typeof AppJobsIndexRoute
   '/_app/keys/': typeof AppKeysIndexRoute
@@ -102,8 +102,8 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/signin'
     | '/'
+    | '/signin'
     | '/podcasts/$id'
     | '/jobs'
     | '/keys'
@@ -112,8 +112,8 @@ export interface FileRouteTypes {
     | '/webhooks'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/signin'
     | '/'
+    | '/signin'
     | '/podcasts/$id'
     | '/jobs'
     | '/keys'
@@ -122,9 +122,9 @@ export interface FileRouteTypes {
     | '/webhooks'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/signin'
-    | '/_app/'
     | '/_app/podcasts/$id'
     | '/_app/jobs/'
     | '/_app/keys/'
@@ -134,6 +134,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   SigninLazyRoute: typeof SigninLazyRoute
 }
@@ -154,12 +155,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/webhooks/': {
       id: '/_app/webhooks/'
@@ -207,7 +208,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
-  AppIndexRoute: typeof AppIndexRoute
   AppPodcastsIdRoute: typeof AppPodcastsIdRoute
   AppJobsIndexRoute: typeof AppJobsIndexRoute
   AppKeysIndexRoute: typeof AppKeysIndexRoute
@@ -217,7 +217,6 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppIndexRoute: AppIndexRoute,
   AppPodcastsIdRoute: AppPodcastsIdRoute,
   AppJobsIndexRoute: AppJobsIndexRoute,
   AppKeysIndexRoute: AppKeysIndexRoute,
@@ -229,6 +228,7 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   SigninLazyRoute: SigninLazyRoute,
 }
