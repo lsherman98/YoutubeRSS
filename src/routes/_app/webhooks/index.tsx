@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useGetWebhook, useGetWebhookEvents } from "@/lib/api/queries";
+import { useGetUsage, useGetWebhook, useGetWebhookEvents } from "@/lib/api/queries";
 import { useCreateWebhook, useUpdateWebhook, useDeleteWebhook } from "@/lib/api/mutations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,13 @@ export const Route = createFileRoute("/_app/webhooks/")({
 function RouteComponent() {
   const { data: webhook } = useGetWebhook();
   const { data: webhookEvents } = useGetWebhookEvents();
+  const { data: usage } = useGetUsage();
   const createWebhookMutation = useCreateWebhook();
   const updateWebhookMutation = useUpdateWebhook();
   const deleteWebhookMutation = useDeleteWebhook();
+  const tierLookupKey = usage?.expand?.tier.lookup_key;
+  const webhooksDisabled =
+    tierLookupKey === "free" || tierLookupKey === "basic_monthly" || tierLookupKey === "basic_yearly";
 
   const handleCreateWebhook = async (data: Partial<WebhooksRecord>) => {
     try {
@@ -101,7 +105,7 @@ function RouteComponent() {
                 onSubmit={handleCreateWebhook}
                 isPending={createWebhookMutation.isPending}
                 trigger={
-                  <Button>
+                  <Button disabled={webhooksDisabled}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Webhook
                   </Button>

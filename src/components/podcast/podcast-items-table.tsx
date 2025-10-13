@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, MoreHorizontal, Youtube, Upload } from "lucide-react";
+import { LoaderCircle, MoreHorizontal, Youtube, Upload, AlertCircle, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
 import { useDeletePodcastItem } from "@/lib/api/mutations";
 import { formatDuration, formatFileSize } from "@/lib/utils";
 import type { ItemsResponse } from "@/lib/pocketbase-types";
-import { ItemsTypeOptions } from "@/lib/pocketbase-types";
+import { ItemsStatusOptions, ItemsTypeOptions } from "@/lib/pocketbase-types";
 import type { ExpandItem } from "@/lib/api/api";
 import { pb } from "@/lib/pocketbase";
 
@@ -47,10 +47,7 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
         <TableBody>
           {Array.isArray(podcastItems) &&
             podcastItems.map((item) => {
-              if (
-                (item.type === ItemsTypeOptions.url && !item.expand.download) ||
-                (item.type === ItemsTypeOptions.upload && !item.expand.upload)
-              ) {
+              if (item.status === ItemsStatusOptions.CREATED) {
                 return (
                   <TableRow key={item.id}>
                     <TableCell colSpan={8} className="text-center">
@@ -62,6 +59,31 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
                   </TableRow>
                 );
               }
+
+              if (item.status === ItemsStatusOptions.ERROR) {
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell colSpan={9}>
+                      <div className="flex items-center justify-between py-2 px-2 bg-red-50 rounded">
+                        <div className="flex items-center gap-2 flex-1">
+                          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                          <span className="text-red-700 text-sm">{item.error || "An error occurred"}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteItemMutation.mutate(item.id)}
+                          className="h-8 w-8 p-0 hover:bg-red-100"
+                          title="Dismiss"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              }
+
               const isUpload = item.type === ItemsTypeOptions.upload;
               const data = isUpload ? item.expand.upload : item.expand.download;
 
@@ -94,8 +116,8 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
                       "-"
                     )}
                   </TableCell>
+                  <TableCell>{data?.size ? formatFileSize(data.size) : "-"}</TableCell>
                   <TableCell>{new Date(item.created).toLocaleDateString()}</TableCell>
-                  <TableCell>{data.size ? formatFileSize(data.size) : "-"}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

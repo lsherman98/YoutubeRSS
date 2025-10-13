@@ -19,7 +19,7 @@ import { useGetUsage } from "@/lib/api/queries";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: usage } = useGetUsage();
   const tierLookupKey = usage?.expand?.tier.lookup_key;
-  const freeTier = tierLookupKey === "free";
+  const apiDisabled = tierLookupKey === "free" || tierLookupKey === "basic_monthly" || tierLookupKey === "basic_yearly";
 
   const data = {
     navMain: [
@@ -37,8 +37,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Jobs",
         url: "/jobs",
         icon: Server,
-        disabled: freeTier,
-        badge: freeTier
+        disabled: apiDisabled,
+        badge: apiDisabled
           ? {
               text: "Upgrade",
               url: "/subscriptions",
@@ -49,13 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Webhooks",
         url: "/webhooks",
         icon: Send,
-        disabled: freeTier,
-        badge: freeTier
-          ? {
-              text: "Upgrade",
-              url: "/subscriptions",
-            }
-          : undefined,
+        disabled: apiDisabled,
       },
     ],
     navSecondary: [

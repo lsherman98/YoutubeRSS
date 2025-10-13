@@ -9,6 +9,7 @@ import (
 	_ "github.com/lsherman98/yt-rss/pocketbase/migrations"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/api_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/api_key_hooks"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/cron_jobs"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/file_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/items_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/jobs_hooks"
@@ -67,6 +68,10 @@ func main() {
 	}
 
 	if err := stripe_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := cron_jobs.Init(app); err != nil {
 		log.Fatal(err)
 	}
 

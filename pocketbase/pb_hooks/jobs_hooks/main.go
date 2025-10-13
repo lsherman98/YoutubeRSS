@@ -3,7 +3,6 @@ package jobs_hooks
 import (
 	"os"
 	"regexp"
-	"time"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/lsherman98/yt-rss/pocketbase/webhook_client"
@@ -39,14 +38,14 @@ func Init(app *pocketbase.PocketBase) error {
 
 		download := core.NewRecord(downloads)
 
-		monthlyUsage, err := e.App.FindFirstRecordByFilter(collections.MonthlyUsage, "user = {:user} && billing_cycle_end > {:now}", dbx.Params{
+		monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
 			"user": user,
-			"now":  time.Now().UTC().Format(time.RFC3339),
 		})
-		if err != nil || monthlyUsage == nil {
+		if err != nil || monthlyUsageRecords == nil {
 			e.App.Logger().Error("Jobs Hooks: failed to find monthly usage record: " + err.Error())
 			return e.Next()
 		}
+		monthlyUsage := monthlyUsageRecords[0]
 
 		webhookClient := webhook_client.New(user, e.App, job)
 		if webhookClient != nil {

@@ -221,18 +221,21 @@ func Init(app *pocketbase.PocketBase) error {
 
 func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscription, subscriptionsCollection *core.Collection) error {
 	var subscriptionRecord *core.Record
-	subscriptionRecord, err := e.App.FindFirstRecordByData(collections.StripeSubscriptions, "subscription_id", subscription.ID)
+	subscriptionRecord, err := e.App.FindFirstRecordByData(collections.StripeSubscriptions, "customer_id", subscription.Customer.ID)
 	if err != nil {
+		e.App.Logger().Info("Stripe Hooks: creating new subscription record")
 		subscriptionRecord = core.NewRecord(subscriptionsCollection)
 	}
 
 	customer, err := e.App.FindFirstRecordByData(collections.StripeCustomers, "customer_id", subscription.Customer.ID)
 	if err != nil {
+		e.App.Logger().Info("Stripe Hooks: failed to find customer record")
 		return err
 	}
 
 	user, err := e.App.FindRecordById(collections.Users, customer.GetString("user"))
 	if err != nil {
+		e.App.Logger().Info("Stripe Hooks: failed to find user record")
 		return err
 	}
 
@@ -254,10 +257,14 @@ func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscrip
 		e.App.Logger().Error("Stripe Hooks: failed to find subscription tier: " + err.Error())
 	}
 
-	usageRecord, err := e.App.FindFirstRecordByFilter(collections.MonthlyUsage, "user = {:user} && billing_cycle_end > {:now}", dbx.Params{"user": user.Id, "now": time.Now().UTC().Format(time.RFC3339)})
-	if err != nil {
-		e.App.Logger().Error("Stripe Webhooks: failed to find monthly usage record: " + err.Error())
+	monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
+		"user": user.Id,
+	})
+	if err != nil || monthlyUsageRecords == nil {
+		e.App.Logger().Error("Stripe Hooks: failed to find monthly usage record: " + err.Error())
+		return err
 	}
+	usageRecord := monthlyUsageRecords[0]
 
 	usageRecord.Set("tier", tier.Id)
 	usageRecord.Set("limit", tier.Get("monthly_usage_limit"))

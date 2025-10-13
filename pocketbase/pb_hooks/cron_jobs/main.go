@@ -9,9 +9,8 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func Init(app pocketbase.PocketBase) error {
-
-	app.Cron().MustAdd("", "*/2 * * * *", func() {
+func Init(app *pocketbase.PocketBase) error {
+	app.Cron().MustAdd("CronJobMonthlyUsageReset", "0 0,12 * * *", func() {
 		monthylUsageRecordsCollection, err := app.FindCollectionByNameOrId(collections.MonthlyUsage)
 		if err != nil {
 			app.Logger().Error("Cron Jobs: failed to find monthly usage collection: " + err.Error())
@@ -44,10 +43,10 @@ func Init(app pocketbase.PocketBase) error {
 			if lookupKey == "professional_yearly" || lookupKey == "professional_monthly" {
 				prevUsage := record.GetInt("usage")
 				prevLimit := record.GetInt("limit")
-				newUsageRecord.Set("limit", usageLimit + (prevLimit - prevUsage))
+				newUsageRecord.Set("limit", usageLimit+(prevLimit-prevUsage))
 			} else {
-                newUsageRecord.Set("limit", usageLimit)
-            }
+				newUsageRecord.Set("limit", usageLimit)
+			}
 
 			if err := app.Save(newUsageRecord); err != nil {
 				app.Logger().Error("Cron Jobs: failed to create new monthly usage record: " + err.Error())

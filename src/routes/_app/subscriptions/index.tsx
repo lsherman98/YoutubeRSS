@@ -138,7 +138,6 @@ function SubscriptionPage() {
                   currentTier === "free" ? handleUpgrade("basic") : handleManageSubscription();
                 }}
                 className="w-full"
-                disabled={checkoutMutation.isPending || portalMutation.isPending}
                 variant={currentTier === "basic_monthly" || currentTier === "basic_yearly" ? "outline" : "default"}
               >
                 {currentTier === "basic_monthly" || currentTier === "basic_yearly"
@@ -194,7 +193,6 @@ function SubscriptionPage() {
                   currentTier === "free" ? handleUpgrade("powerUser") : handleManageSubscription();
                 }}
                 className="w-full"
-                disabled={checkoutMutation.isPending || portalMutation.isPending}
                 variant={
                   currentTier === "power_user_monthly" || currentTier === "power_user_yearly" ? "outline" : "default"
                 }
@@ -257,7 +255,6 @@ function SubscriptionPage() {
                   currentTier === "free" ? handleUpgrade("professional") : handleManageSubscription();
                 }}
                 className="w-full"
-                disabled={checkoutMutation.isPending || portalMutation.isPending}
                 variant={
                   currentTier === "professional_monthly" || currentTier === "professional_yearly"
                     ? "outline"

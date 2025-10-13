@@ -1,5 +1,5 @@
 import { pb } from "../pocketbase";
-import { Collections, ItemsTypeOptions, JobsStatusOptions, type DownloadsResponse, type ItemsResponse, type JobsResponse, type MonthlyUsageResponse, type PodcastsRecord, type SubscriptionTiersResponse, type UploadsResponse, type WebhooksRecord } from "../pocketbase-types";
+import { Collections, ItemsStatusOptions, ItemsTypeOptions, JobsStatusOptions, type DownloadsResponse, type ItemsResponse, type JobsResponse, type MonthlyUsageResponse, type PodcastsRecord, type SubscriptionTiersResponse, type UploadsResponse, type WebhooksRecord } from "../pocketbase-types";
 import { getUserId } from "../utils";
 
 export async function addYoutubeUrls(urls: string[], podcastId: string) {
@@ -9,7 +9,8 @@ export async function addYoutubeUrls(urls: string[], podcastId: string) {
             url,
             user: getUserId(),
             podcast: podcastId,
-            type: ItemsTypeOptions.url
+            type: ItemsTypeOptions.url,
+            status: ItemsStatusOptions.CREATED
         })
     });
     return await batch.send();
@@ -21,19 +22,21 @@ export type AudioUpload = {
 }
 
 export async function addAudioFiles(files: AudioUpload[], podcastId: string) {
-    const batch = pb.createBatch();
-    for (const { file, title } of files) {
+    const promises = files.map(async ({ file, title }) => {
         const duration = await getAudioDuration(file);
-        batch.collection(Collections.Uploads).create({
+        return await pb.collection(Collections.Uploads).create({
             file,
             user: getUserId(),
             podcast: podcastId,
             title: title,
             size: file.size,
             duration,
-        })
-    }
-    return await batch.send();
+            type: ItemsTypeOptions.upload,
+            status: ItemsStatusOptions.CREATED
+        });
+    });
+
+    return await Promise.all(promises);
 }
 
 async function getAudioDuration(file: File): Promise<number> {

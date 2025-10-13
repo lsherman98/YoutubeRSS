@@ -73,15 +73,14 @@ export function AddItemDialog({ podcastId }: AddItemDialogProps) {
           </DialogTitle>
           <DialogDescription>Add YouTube videos or upload audio files to this podcast.</DialogDescription>
         </DialogHeader>
-
         {podcastId && (
           <Tabs defaultValue="youtube" className="w-full flex-1 flex flex-col min-h-0">
             <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
-              <TabsTrigger value="youtube" className="flex items-center gap-2" disabled={usageLimitReached}>
+              <TabsTrigger value="youtube" className="flex items-center gap-2" >
                 <Youtube className="h-4 w-4" />
                 YouTube URLs
               </TabsTrigger>
-              <TabsTrigger value="upload" className="flex items-center gap-2" disabled={uploadLimitReached}>
+              <TabsTrigger value="upload" className="flex items-center gap-2" >
                 <Upload className="h-4 w-4" />
                 Audio Files
               </TabsTrigger>

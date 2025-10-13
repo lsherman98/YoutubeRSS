@@ -3,7 +3,6 @@ package items_hooks
 import (
 	"os"
 	"regexp"
-	"time"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/lsherman98/yt-rss/pocketbase/files"
@@ -64,13 +63,14 @@ func Init(app *pocketbase.PocketBase) error {
 			return e.Next()
 		}
 
-		monthlyUsage, err := e.App.FindFirstRecordByFilter(collections.MonthlyUsage, "user = {:user} && billing_cycle_end > {:now}", dbx.Params{
+		monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
 			"user": user,
-			"now":  time.Now().UTC().Format(time.RFC3339),
 		})
-		if err != nil || monthlyUsage == nil {
+		if err != nil || monthlyUsageRecords == nil {
 			e.App.Logger().Error("Items Hooks: failed to find monthly usage record: " + err.Error())
+			return e.Next()
 		}
+		monthlyUsage := monthlyUsageRecords[0]
 
 		switch itemType {
 		case "url":
@@ -99,12 +99,13 @@ func Init(app *pocketbase.PocketBase) error {
 				if fileSize == 0 {
 					fileSize = result.Info.FilesizeApprox
 				}
+
 				usageLimit := monthlyUsage.GetInt("limit")
 				currentUsage := monthlyUsage.GetInt("usage")
 
-				if currentUsage > usageLimit || (currentUsage+int(fileSize)) > usageLimit {
+				if currentUsage > usageLimit || (currentUsage+int(fileSize/2)) > usageLimit {
 					itemRecord.Set("status", "ERROR")
-					itemRecord.Set("error", "Monthly usage limit exceeded")
+					itemRecord.Set("error", "Failed to add item to podcast: Monthly usage limit exceeded")
 					if err := e.App.Save(itemRecord); err != nil {
 						e.App.Logger().Error("Items Hooks: failed to update item record status to ERROR: " + err.Error())
 						return
@@ -117,12 +118,6 @@ func Init(app *pocketbase.PocketBase) error {
 				if err == nil && existingDownload != nil {
 					download = existingDownload
 				} else {
-					itemRecord.Set("status", "STARTED")
-					if err := e.App.Save(itemRecord); err != nil {
-						e.App.Logger().Error("Items Hooks: failed to update item record status to ERROR: " + err.Error())
-						return
-					}
-
 					audio, path, err := ytdlp.Download(url, download, result)
 					if err != nil {
 						e.App.Logger().Error("Items Hooks: failed to download audio: " + err.Error())
@@ -172,25 +167,7 @@ func Init(app *pocketbase.PocketBase) error {
 				}
 			})
 		case "upload":
-			tierId := monthlyUsage.GetString("tier")
-			tier, err := e.App.FindRecordById(collections.SubscriptionTiers, tierId)
-			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to find subscription tier record: " + err.Error())
-				return e.Next()
-			}
-
-			freeTier := tier.GetString("price_id") == "free"
 			currentUploadCount := monthlyUsage.GetInt("uploads")
-
-			if freeTier && currentUploadCount >= 15 {
-				itemRecord.Set("status", "ERROR")
-				itemRecord.Set("error", "Monthly upload limit reached")
-				if err := e.App.Save(itemRecord); err != nil {
-					e.App.Logger().Error("Items Hooks: failed to update item record status to ERROR: " + err.Error())
-					return e.Next()
-				}
-				return e.Next()
-			}
 
 			upload, err := e.App.FindRecordById(collections.Uploads, itemRecord.GetString("upload"))
 			if err != nil {
@@ -198,9 +175,16 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.Next()
 			}
 
+			itemRecord.Set("status", "SUCCESS")
+			if err := e.App.Save(itemRecord); err != nil {
+				e.App.Logger().Error("Items Hooks: failed to update item record status to SUCCESS: " + err.Error())
+				return e.Next()
+			}
+
 			audioURL := fileClient.GetFileURL(upload, "file")
 			title := upload.GetString("title")
 			duration := upload.GetFloat("duration")
+
 			rss_utils.AddItemToPodcast(&p, title, audioURL, "No description provided.", upload.Id, audioURL, int64(duration))
 
 			routine.FireAndForget(func() {

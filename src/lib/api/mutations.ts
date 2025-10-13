@@ -11,6 +11,7 @@ export function useAddYoutubeUrls() {
         onError: handleError,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["items"] });
+            queryClient.invalidateQueries({ queryKey: ["usage"] });
         },
     })
 }
@@ -23,6 +24,7 @@ export function useAddAudioFiles() {
         onError: handleError,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["items"] });
+            queryClient.invalidateQueries({ queryKey: ["usage"] });
         },
     })
 }

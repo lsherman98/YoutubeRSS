@@ -223,7 +223,7 @@ export type StripeCustomersRecord = {
 	email?: string
 	id: string
 	updated?: IsoDateString
-	user: RecordIdString
+	user?: RecordIdString
 }
 
 export type StripeSubscriptionsRecord<Tmetadata = unknown> = {

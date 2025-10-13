@@ -12,7 +12,6 @@ import (
 
 func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordCreateRequest(collections.Podcasts).BindFunc(func(e *core.RecordRequestEvent) error {
-
 		user, err := e.App.FindRecordById(collections.Users, e.Auth.Id)
 		if err != nil {
 			e.App.Logger().Error("Podcast Hooks: failed to find user", "error", err)
@@ -43,13 +42,8 @@ func Init(app *pocketbase.PocketBase) error {
 		website := podcast.GetString("website")
 		username := e.Auth.GetString("name")
 		email := e.Auth.Email()
-
-		if err := e.App.Save(podcast); err != nil {
-			e.App.Logger().Error("Podcast Hooks: failed to save podcast", "error", err)
-			return e.Next()
-		}
-
 		image := podcast.GetString("image")
+
 		if image == "" {
 			file, err := filesystem.NewFileFromPath("./pb_public/static/rss.png")
 			if err != nil {
@@ -62,6 +56,11 @@ func Init(app *pocketbase.PocketBase) error {
 				e.App.Logger().Error("Podcast Hooks: failed to save podcast with default image", "error", err)
 				return e.Next()
 			}
+		}
+
+		if err := e.App.Save(podcast); err != nil {
+			e.App.Logger().Error("Podcast Hooks: failed to save podcast", "error", err)
+			return e.Next()
 		}
 
 		fileClient, err := files.NewFileClient(e.App, podcast, "file")

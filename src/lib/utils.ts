@@ -14,6 +14,7 @@ export function handleError(error: Error) {
   console.error(error)
   toast.error("An error occurred", {
     description: error.message,
+    richColors: true
   })
 }
 

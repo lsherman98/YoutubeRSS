@@ -37,9 +37,10 @@ const createPodcastFormSchema = z.object({
 interface CreatePodcastDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  disabled: boolean;
 }
 
-export function CreatePodcastDialog({ isOpen, onOpenChange }: CreatePodcastDialogProps) {
+export function CreatePodcastDialog({ isOpen, onOpenChange, disabled }: CreatePodcastDialogProps) {
   const createPodcastMutation = useCreatePodcast();
 
   const form = useForm<z.infer<typeof createPodcastFormSchema>>({
@@ -73,7 +74,11 @@ export function CreatePodcastDialog({ isOpen, onOpenChange }: CreatePodcastDialo
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button>Add Podcast</Button>
+        <Button
+          disabled={disabled}
+        >
+          Add Podcast
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>

@@ -30,6 +30,9 @@ export function CreateJobDialog({ isOpen, onOpenChange }: CreateJobDialogProps) 
   const currentUsage = usage?.usage ?? 0;
   const usageLimit = usage?.limit ?? 0;
   const usageLimitReached = currentUsage >= usageLimit;
+  const tierLookupKey = usage?.expand?.tier.lookup_key;
+  const jobsDisabled =
+    tierLookupKey === "free" || tierLookupKey === "basic_monthly" || tierLookupKey === "basic_yearly";
 
   const handleSubmit = (data: z.infer<typeof YoutubeURLsFormSchema>) => {
     const urls = data.youtubeUrls.filter((item) => item.url.trim() !== "").map((item) => item.url.trim());
@@ -52,7 +55,7 @@ export function CreateJobDialog({ isOpen, onOpenChange }: CreateJobDialogProps) 
           <TooltipTrigger asChild>
             <div>
               <DialogTrigger asChild>
-                <Button disabled={usageLimitReached}>
+                <Button disabled={usageLimitReached || jobsDisabled}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Jobs
                 </Button>

@@ -683,6 +683,19 @@ func init() {
 						"type": "text"
 					},
 					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_2253575739",
+						"hidden": false,
+						"id": "relation614373258",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "tier",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
 						"hidden": false,
 						"id": "autodate2990389176",
 						"name": "created",
@@ -720,11 +733,11 @@ func init() {
 				},
 				"name": "users",
 				"oauth2": {
-					"enabled": false,
+					"enabled": true,
 					"mappedFields": {
 						"avatarURL": "",
 						"id": "",
-						"name": "",
+						"name": "name",
 						"username": ""
 					}
 				},
@@ -856,6 +869,35 @@ func init() {
 						"required": false,
 						"system": false,
 						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "select2063623452",
+						"maxSelect": 1,
+						"name": "status",
+						"presentable": false,
+						"required": true,
+						"system": false,
+						"type": "select",
+						"values": [
+							"CREATED",
+							"SUCCESS",
+							"ERROR"
+						]
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text1574812785",
+						"max": 0,
+						"min": 0,
+						"name": "error",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
 					},
 					{
 						"hidden": false,
@@ -1397,7 +1439,7 @@ func init() {
 					},
 					{
 						"autogeneratePattern": "",
-						"hidden": true,
+						"hidden": false,
 						"id": "text571477967",
 						"max": 0,
 						"min": 0,
@@ -1442,7 +1484,7 @@ func init() {
 				"viewRule": "@request.auth.id = user.id"
 			},
 			{
-				"createRule": "@request.auth.id != \"\"",
+				"createRule": "@request.auth.id != \"\" && @request.auth.tier.lookup_key != \"free\" && @request.auth.tier.lookup_key != \"basic_yearly\"  && @request.auth.tier.lookup_key != \"basic_monthly\"",
 				"deleteRule": null,
 				"fields": [
 					{
@@ -1587,7 +1629,7 @@ func init() {
 				"viewRule": "@request.auth.id = user.id"
 			},
 			{
-				"createRule": "@request.auth.id != \"\"",
+				"createRule": "@request.auth.id != \"\" && @request.auth.tier.lookup_key != \"free\" && @request.auth.tier.lookup_key != \"basic_yearly\" && @request.auth.tier.lookup_key != \"basic_monthly\"",
 				"deleteRule": "@request.auth.id = user.id",
 				"fields": [
 					{
@@ -1605,7 +1647,7 @@ func init() {
 						"type": "text"
 					},
 					{
-						"cascadeDelete": false,
+						"cascadeDelete": true,
 						"collectionId": "_pb_users_auth_",
 						"hidden": false,
 						"id": "relation2375276105",
@@ -1893,6 +1935,31 @@ func init() {
 						"type": "number"
 					},
 					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_2253575739",
+						"hidden": false,
+						"id": "relation614373258",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "tier",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "number2140596320",
+						"max": null,
+						"min": null,
+						"name": "limit",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
 						"hidden": false,
 						"id": "autodate2990389176",
 						"name": "created",
@@ -1923,6 +1990,573 @@ func init() {
 				"type": "base",
 				"updateRule": null,
 				"viewRule": "@request.auth.id = user.id"
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "number2392944706",
+						"max": null,
+						"min": null,
+						"name": "amount",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text1428703508",
+						"max": 0,
+						"min": 0,
+						"name": "charge_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "bool4253985592",
+						"name": "paid",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "bool"
+					},
+					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "url2263173092",
+						"name": "receipt_url",
+						"onlyDomains": null,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "url"
+					},
+					{
+						"hidden": false,
+						"id": "bool2067034193",
+						"name": "refunded",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "bool"
+					},
+					{
+						"hidden": false,
+						"id": "select2063623452",
+						"maxSelect": 1,
+						"name": "status",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "select",
+						"values": [
+							"succeeded",
+							"pending",
+							"failed"
+						]
+					},
+					{
+						"hidden": false,
+						"id": "json1326724116",
+						"maxSize": 0,
+						"name": "metadata",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "json"
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text2476065779",
+						"max": 0,
+						"min": 0,
+						"name": "customer_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": true,
+						"system": false,
+						"type": "text"
+					}
+				],
+				"id": "pbc_3174063690",
+				"indexes": [],
+				"listRule": null,
+				"name": "stripe_charges",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": null
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text2476065779",
+						"max": 0,
+						"min": 0,
+						"name": "customer_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": true,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"exceptDomains": null,
+						"hidden": false,
+						"id": "email3885137012",
+						"name": "email",
+						"onlyDomains": null,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "email"
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "autodate3332085495",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "pbc_108570809",
+				"indexes": [],
+				"listRule": null,
+				"name": "stripe_customers",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": null
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "_pbf_text_id_",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "jcxglr00",
+						"max": 0,
+						"min": 0,
+						"name": "subscription_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "rspmnb0u",
+						"max": 0,
+						"min": 0,
+						"name": "status",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "jfgu36fs",
+						"maxSize": 5242880,
+						"name": "metadata",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "json"
+					},
+					{
+						"hidden": false,
+						"id": "hh0ogpf6",
+						"name": "cancel_at_period_end",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "bool"
+					},
+					{
+						"hidden": false,
+						"id": "dwxvv06q",
+						"max": "",
+						"min": "",
+						"name": "current_period_start",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "qexnsy6w",
+						"max": "",
+						"min": "",
+						"name": "current_period_end",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "latwf5he",
+						"max": "",
+						"min": "",
+						"name": "ended_at",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "zr5dy0uv",
+						"max": "",
+						"min": "",
+						"name": "cancel_at",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"hidden": false,
+						"id": "jgkres4h",
+						"max": "",
+						"min": "",
+						"name": "canceled_at",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "date"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "_pb_users_auth_",
+						"hidden": false,
+						"id": "relation2375276105",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "user",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"cascadeDelete": false,
+						"collectionId": "pbc_2253575739",
+						"hidden": false,
+						"id": "relation614373258",
+						"maxSelect": 1,
+						"minSelect": 0,
+						"name": "tier",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "relation"
+					},
+					{
+						"hidden": false,
+						"id": "_pbf_autodate_created_",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "_pbf_autodate_updated_",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text2476065779",
+						"max": 0,
+						"min": 0,
+						"name": "customer_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": true,
+						"system": false,
+						"type": "text"
+					}
+				],
+				"id": "qfiqyxbv63dsbsr",
+				"indexes": [
+					"CREATE INDEX ` + "`" + `idx_lnL7G0jjvJ` + "`" + ` ON ` + "`" + `subscriptions` + "`" + ` (` + "`" + `subscription_id` + "`" + `)",
+					"CREATE UNIQUE INDEX ` + "`" + `idx_yzONCAqJMA` + "`" + ` ON ` + "`" + `stripe_subscriptions` + "`" + ` (` + "`" + `user` + "`" + `)",
+					"CREATE INDEX ` + "`" + `idx_TzQjS9eFGU` + "`" + ` ON ` + "`" + `stripe_subscriptions` + "`" + ` (` + "`" + `customer_id` + "`" + `)"
+				],
+				"listRule": null,
+				"name": "stripe_subscriptions",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": null
+			},
+			{
+				"createRule": null,
+				"deleteRule": null,
+				"fields": [
+					{
+						"autogeneratePattern": "[a-z0-9]{15}",
+						"hidden": false,
+						"id": "text3208210256",
+						"max": 15,
+						"min": 15,
+						"name": "id",
+						"pattern": "^[a-z0-9]+$",
+						"presentable": false,
+						"primaryKey": true,
+						"required": true,
+						"system": true,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text724990059",
+						"max": 0,
+						"min": 0,
+						"name": "title",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text35916861192",
+						"max": 0,
+						"min": 0,
+						"name": "price_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text3591686119",
+						"max": 0,
+						"min": 0,
+						"name": "test_price_id",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text1869838599",
+						"max": 0,
+						"min": 0,
+						"name": "lookup_key",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"hidden": false,
+						"id": "number1749279057",
+						"max": null,
+						"min": null,
+						"name": "monthly_usage_limit",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"hidden": false,
+						"id": "number3402113753",
+						"max": null,
+						"min": null,
+						"name": "price",
+						"onlyInt": false,
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "number"
+					},
+					{
+						"hidden": false,
+						"id": "select432467915",
+						"maxSelect": 1,
+						"name": "interval",
+						"presentable": false,
+						"required": false,
+						"system": false,
+						"type": "select",
+						"values": [
+							"yearly",
+							"monthly"
+						]
+					},
+					{
+						"hidden": false,
+						"id": "autodate2990389176",
+						"name": "created",
+						"onCreate": true,
+						"onUpdate": false,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					},
+					{
+						"hidden": false,
+						"id": "autodate3332085495",
+						"name": "updated",
+						"onCreate": true,
+						"onUpdate": true,
+						"presentable": false,
+						"system": false,
+						"type": "autodate"
+					}
+				],
+				"id": "pbc_2253575739",
+				"indexes": [],
+				"listRule": null,
+				"name": "subscription_tiers",
+				"system": false,
+				"type": "base",
+				"updateRule": null,
+				"viewRule": "@request.auth.id != \"\""
 			}
 		]`
 

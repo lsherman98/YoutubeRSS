@@ -51,7 +51,6 @@ func Init(app *pocketbase.PocketBase) error {
 		}).Bind(apis.RequireAuth())
 
 		se.Router.POST("/api/v1/convert", func(e *core.RequestEvent) error {
-			e.App.Logger().Info("API Hooks: /api/v1/convert called")
 			body := ConvertRequest{}
 			if err := e.BindBody(&body); err != nil {
 				return e.BadRequestError("Invalid request body", err)
@@ -70,7 +69,7 @@ func Init(app *pocketbase.PocketBase) error {
 			}
 
 			userId := apiKeyRecord.GetString("user")
-			user, err := e.App.FindAuthOriginById(userId)
+			user, err := e.App.FindRecordById(collections.Users, userId)
 			if err != nil || user == nil {
 				return e.UnauthorizedError("Invalid API key", map[string]any{})
 			}
@@ -81,8 +80,12 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.InternalServerError("something went wrong", map[string]any{})
 			}
 
-			if tier.GetString("price_id") == "free" {
+			if tier.GetString("lookup_key") == "free" {
 				return e.ForbiddenError("Free tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
+			}
+
+			if tier.GetString("lookup_key") == "basic_monthly" || tier.GetString("lookup_key") == "basic_yearly" {
+				return e.ForbiddenError("Basic tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
 			}
 
 			if len(body.URLs) == 0 || len(body.URLs) > URLsLimit {
@@ -143,7 +146,7 @@ func Init(app *pocketbase.PocketBase) error {
 
 			jobs, err := e.App.FindRecordsByFilter(jobCollection, "batch_id = {:batchId}", "", 0, 0, dbx.Params{"batchId": batchId})
 			if err != nil {
-				return e.InternalServerError("internal server error", map[string]any{})
+				return e.NotFoundError("Batch not found", map[string]any{})
 			}
 
 			jobsResponse := []JobResponse{}
@@ -296,7 +299,7 @@ func Init(app *pocketbase.PocketBase) error {
 			}
 
 			userId := apiKeyRecord.GetString("user")
-			user, err := e.App.FindAuthOriginById(userId)
+			user, err := e.App.FindRecordById(collections.Users, userId)
 			if err != nil || user == nil {
 				return e.UnauthorizedError("Invalid API key", map[string]any{})
 			}
@@ -309,6 +312,10 @@ func Init(app *pocketbase.PocketBase) error {
 
 			if tier.GetString("price_id") == "free" {
 				return e.ForbiddenError("Free tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
+			}
+
+			if tier.GetString("lookup_key") == "basic_monthly" || tier.GetString("lookup_key") == "basic_yearly" {
+				return e.ForbiddenError("Basic tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
 			}
 
 			job, err := e.App.FindRecordById(collections.Jobs, jobId)

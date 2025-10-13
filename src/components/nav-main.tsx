@@ -39,6 +39,11 @@ export function NavMain({
                     </Badge>
                   </Link>
                 </SidebarMenuButton>
+              ) : item.disabled ? (
+                <SidebarMenuButton className="cursor-not-allowed">
+                  {item.icon && <item.icon />}
+                  <span className="opacity-50">{item.title}</span>
+                </SidebarMenuButton>
               ) : (
                 <Link to={item.url}>
                   <SidebarMenuButton className="cursor-pointer">
