@@ -451,24 +451,69 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.InternalServerError("internal server error", nil)
 			}
 
-			return e.JSON(http.StatusOK, map[string]string{"status": "success", "item_id": item.Id})
+			return e.JSON(http.StatusOK, nil)
 		})
 
-		se.Router.GET("/api/v1/poll/item/{itemId}", func(e *core.RequestEvent) error {
-			itemId := e.Request.PathValue("itemId")
-			if itemId == "" {
-				return e.BadRequestError("Missing itemId parameter", nil)
+		type ItemResponse struct {
+			Status  string `json:"status"`
+			Title   string `json:"title,omitempty"`
+			Error   string `json:"error,omitempty"`
+			Created string `json:"created,omitempty"`
+		}
+
+		se.Router.GET("/api/v1/get-items/{podcastId}", func(e *core.RequestEvent) error {
+			podcastId := e.Request.PathValue("podcastId")
+			if podcastId == "" {
+				return e.BadRequestError("Missing podcastId parameter", nil)
 			}
 
-			item, err := e.App.FindRecordById(collections.Items, itemId)
-			if err != nil || item == nil {
-				return e.NotFoundError("Item not found", nil)
+			authHeader := e.Request.Header.Get("Authorization")
+			if authHeader == "" {
+				return e.UnauthorizedError("Missing Authorization header", nil)
 			}
 
-			return e.JSON(200, map[string]string{
-				"status": item.GetString("status"),
-			})
+			apiKey := ""
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				apiKey = authHeader[7:]
+			} else {
+				return e.UnauthorizedError("Invalid Authorization header format", nil)
+			}
+
+			hashedAPIKey := security.SHA256(apiKey)
+			apiKeyRecord, err := e.App.FindFirstRecordByData(collections.APIKeys, "hashed_key", hashedAPIKey)
+			if err != nil || apiKeyRecord == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			userId := apiKeyRecord.GetString("user")
+			user, err := e.App.FindRecordById(collections.Users, userId)
+			if err != nil || user == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			items, err := e.App.FindAllRecords(collections.Items, dbx.HashExp{"podcast": podcastId, "user": user.Id})
+			if err != nil || items == nil {
+				return e.NotFoundError("No items found", nil)
+			}
+
+			ItemResponses := []ItemResponse{}
+			for _, item := range items {
+				response := ItemResponse{
+					Status:  item.GetString("status"),
+					Title:   item.GetString("title"),
+					Error:   item.GetString("error"),
+					Created: item.GetString("created"),
+				}
+				ItemResponses = append(ItemResponses, response)
+			}
+
+			return e.JSON(200, ItemResponses)
 		})
+
+		type PodcastResponse struct {
+			ID    string `json:"id"`
+			Title string `json:"title"`
+		}
 
 		se.Router.GET("/api/v1/list-podcasts", func(e *core.RequestEvent) error {
 			authHeader := e.Request.Header.Get("Authorization")
@@ -500,7 +545,16 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.NotFoundError("No podcasts found", nil)
 			}
 
-			return e.JSON(http.StatusOK, podcasts)
+			podcastResponses := []PodcastResponse{}
+			for _, podcast := range podcasts {
+				response := PodcastResponse{
+					ID:    podcast.Id,
+					Title: podcast.GetString("title"),
+				}
+				podcastResponses = append(podcastResponses, response)
+			}
+
+			return e.JSON(http.StatusOK, podcastResponses)
 		})
 
 		se.Router.GET(("/api/v1/get-usage"), func(e *core.RequestEvent) error {
@@ -541,62 +595,8 @@ func Init(app *pocketbase.PocketBase) error {
 			currentUsage := monthlyUsage.GetInt("usage")
 
 			return e.JSON(http.StatusOK, map[string]any{
-				"usage": usageLimit,
-				"used":  currentUsage,
-			})
-		})
-
-		se.Router.GET("/api/v1/poll/jobs", func(e *core.RequestEvent) error {
-			authHeader := e.Request.Header.Get("Authorization")
-			if authHeader == "" {
-				return e.UnauthorizedError("Missing Authorization header", nil)
-			}
-
-			apiKey := ""
-			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
-				apiKey = authHeader[7:]
-			} else {
-				return e.UnauthorizedError("Invalid Authorization header format", nil)
-			}
-
-			hashedAPIKey := security.SHA256(apiKey)
-			apiKeyRecord, err := app.FindFirstRecordByData(collections.APIKeys, "hashed_key", hashedAPIKey)
-			if err != nil || apiKeyRecord == nil {
-				return e.UnauthorizedError("Invalid API key", nil)
-			}
-
-			userId := apiKeyRecord.GetString("user")
-			user, err := e.App.FindRecordById(collections.Users, userId)
-			if err != nil || user == nil {
-				return e.UnauthorizedError("Invalid API key", nil)
-			}
-
-			jobs, err := e.App.FindRecordsByFilter(collections.Jobs, "user = {:user}", "-created", 0, 0, dbx.Params{
-				"user": user.Id,
-			})
-			if err != nil {
-				return e.NotFoundError("No jobs found", nil)
-			}
-
-			jobsResponse := []JobResponse{}
-			for _, job := range jobs {
-				url := job.GetString("url")
-				id := job.Id
-				status := job.GetString("status")
-				title := job.GetString("title")
-				createdAt := job.GetString("created")
-
-				jobsResponse = append(jobsResponse, JobResponse{
-					ID:     id,
-					URL:    url,
-					Status: status,
-					Title:  title,
-					Created: createdAt,
-				})
-			}
-
-			return e.JSON(200, map[string]any{
-				"jobs": jobsResponse,
+				"usage": currentUsage,
+				"limit": usageLimit,
 			})
 		})
 

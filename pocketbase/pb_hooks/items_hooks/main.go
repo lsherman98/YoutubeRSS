@@ -110,6 +110,12 @@ func Init(app *pocketbase.PocketBase) error {
 					return
 				}
 
+				itemRecord.Set("title", result.Info.Title)
+				if err := e.App.Save(itemRecord); err != nil {
+					e.App.Logger().Error("Items Hooks: failed to update item record title: " + err.Error())
+					return
+				}
+
 				fileSize := result.Info.Filesize
 				if fileSize == 0 {
 					fileSize = result.Info.FilesizeApprox
