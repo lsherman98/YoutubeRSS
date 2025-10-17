@@ -3,6 +3,7 @@ package api_hooks
 import (
 	"bytes"
 	"io"
+	"net/http"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/pocketbase/dbx"
@@ -13,12 +14,7 @@ import (
 )
 
 type ConvertRequest struct {
-	URLs   []string `json:"urls"`
-	APIKey string   `json:"api_key"`
-}
-
-type DownloadRequest struct {
-	APIKey string `json:"api_key"`
+	URLs []string `json:"urls"`
 }
 
 type JobResponse struct {
@@ -27,6 +23,8 @@ type JobResponse struct {
 	Status           string         `json:"status"`
 	DownloadEndpoint string         `json:"download_endpoint,omitempty"`
 	VideoMetadata    *VideoMetadata `json:"video_metadata,omitempty"`
+	Title            string         `json:"title,omitempty"`
+	Created          string         `json:"created,omitempty"`
 }
 
 type VideoMetadata struct {
@@ -56,45 +54,67 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.BadRequestError("Invalid request body", err)
 			}
 
-			apiKeysCollection, err := app.FindCollectionByNameOrId(collections.APIKeys)
-			if err != nil {
-				return e.InternalServerError("internal server error", map[string]any{})
+			authHeader := e.Request.Header.Get("Authorization")
+			if authHeader == "" {
+				return e.UnauthorizedError("Missing Authorization header", nil)
 			}
 
-			apiKey := body.APIKey
+			apiKey := ""
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				apiKey = authHeader[7:]
+			} else {
+				return e.UnauthorizedError("Invalid Authorization header format", nil)
+			}
+
 			hashedAPIKey := security.SHA256(apiKey)
-			apiKeyRecord, err := app.FindFirstRecordByData(apiKeysCollection, "hashed_key", hashedAPIKey)
+			apiKeyRecord, err := app.FindFirstRecordByData(collections.APIKeys, "hashed_key", hashedAPIKey)
 			if err != nil || apiKeyRecord == nil {
-				return e.UnauthorizedError("Invalid API key", map[string]any{})
+				return e.UnauthorizedError("Invalid API key", nil)
 			}
 
 			userId := apiKeyRecord.GetString("user")
 			user, err := e.App.FindRecordById(collections.Users, userId)
 			if err != nil || user == nil {
-				return e.UnauthorizedError("Invalid API key", map[string]any{})
+				return e.UnauthorizedError("Invalid API key", nil)
 			}
 
 			tierId := user.GetString("tier")
 			tier, err := e.App.FindRecordById(collections.SubscriptionTiers, tierId)
 			if err != nil || tier == nil {
-				return e.InternalServerError("something went wrong", map[string]any{})
+				return e.InternalServerError("something went wrong", nil)
 			}
 
 			if tier.GetString("lookup_key") == "free" {
-				return e.ForbiddenError("Free tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
+				return e.ForbiddenError("Free tier users cannot use the API. Please upgrade your subscription.", nil)
 			}
 
 			if tier.GetString("lookup_key") == "basic_monthly" || tier.GetString("lookup_key") == "basic_yearly" {
-				return e.ForbiddenError("Basic tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
+				return e.ForbiddenError("Basic tier users cannot use the API. Please upgrade your subscription.", nil)
+			}
+
+			monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
+				"user": user.Id,
+			})
+			if err != nil || monthlyUsageRecords == nil {
+				e.App.Logger().Error("Convert API: failed to find monthly usage record: " + err.Error())
+				return e.Next()
+			}
+			monthlyUsage := monthlyUsageRecords[0]
+
+			usageLimit := monthlyUsage.GetInt("limit")
+			currentUsage := monthlyUsage.GetInt("usage")
+
+			if currentUsage >= usageLimit {
+				return e.ForbiddenError("Monthly usage limit exceeded", nil)
 			}
 
 			if len(body.URLs) == 0 || len(body.URLs) > URLsLimit {
-				return e.BadRequestError("Invalid number of URLs, must be between 1 and "+string(rune(URLsLimit)), map[string]any{})
+				return e.BadRequestError("Invalid number of URLs, must be between 1 and "+string(rune(URLsLimit)), nil)
 			}
 
 			jobCollection, err := app.FindCollectionByNameOrId(collections.Jobs)
 			if err != nil {
-				return e.InternalServerError("internal server error", map[string]any{})
+				return e.InternalServerError("internal server error", nil)
 			}
 
 			batchId := security.PseudorandomString(15)
@@ -126,7 +146,7 @@ func Init(app *pocketbase.PocketBase) error {
 				return e.InternalServerError("failed to create jobs", err.Error())
 			}
 
-			return e.JSON(200, map[string]any{
+			return e.JSON(http.StatusOK, map[string]any{
 				"batch_id": batchId,
 				"message":  "Jobs created successfully",
 				"jobs":     jobs,
@@ -136,17 +156,17 @@ func Init(app *pocketbase.PocketBase) error {
 		se.Router.GET("/api/v1/poll/batch/{batchId}", func(e *core.RequestEvent) error {
 			batchId := e.Request.PathValue("batchId")
 			if batchId == "" {
-				return e.BadRequestError("Missing batchId parameter", map[string]any{})
+				return e.BadRequestError("Missing batchId parameter", nil)
 			}
 
 			jobCollection, err := e.App.FindCollectionByNameOrId(collections.Jobs)
 			if err != nil {
-				return e.InternalServerError("internal server error", map[string]any{})
+				return e.InternalServerError("internal server error", nil)
 			}
 
 			jobs, err := e.App.FindRecordsByFilter(jobCollection, "batch_id = {:batchId}", "", 0, 0, dbx.Params{"batchId": batchId})
 			if err != nil {
-				return e.NotFoundError("Batch not found", map[string]any{})
+				return e.NotFoundError("Batch not found", nil)
 			}
 
 			jobsResponse := []JobResponse{}
@@ -229,12 +249,12 @@ func Init(app *pocketbase.PocketBase) error {
 		se.Router.GET("/api/v1/poll/job/{jobId}", func(e *core.RequestEvent) error {
 			jobId := e.Request.PathValue("jobId")
 			if jobId == "" {
-				return e.BadRequestError("Missing jobId parameter", map[string]any{})
+				return e.BadRequestError("Missing jobId parameter", nil)
 			}
 
 			job, err := e.App.FindRecordById(collections.Jobs, jobId)
 			if err != nil || job == nil {
-				return e.NotFoundError("Job not found", map[string]any{})
+				return e.NotFoundError("Job not found", nil)
 			}
 
 			status := job.GetString("status")
@@ -243,7 +263,7 @@ func Init(app *pocketbase.PocketBase) error {
 			if status == "SUCCESS" {
 				download, err := e.App.FindRecordById(collections.Downloads, job.GetString("download"))
 				if err != nil || download == nil {
-					return e.NotFoundError("Download not found", map[string]any{})
+					return e.NotFoundError("Download not found", nil)
 				}
 
 				title := download.GetString("title")
@@ -278,68 +298,74 @@ func Init(app *pocketbase.PocketBase) error {
 		se.Router.POST("/api/v1/download/{jobId}", func(e *core.RequestEvent) error {
 			jobId := e.Request.PathValue("jobId")
 			if jobId == "" {
-				return e.BadRequestError("Missing jobId parameter", map[string]any{})
-			}
-
-			body := DownloadRequest{}
-			if err := e.BindBody(&body); err != nil {
-				return e.BadRequestError("Invalid request body", err)
+				return e.BadRequestError("Missing jobId parameter", nil)
 			}
 
 			apiKeysCollection, err := app.FindCollectionByNameOrId(collections.APIKeys)
 			if err != nil {
-				return e.InternalServerError("internal server error", map[string]any{})
+				return e.InternalServerError("internal server error", nil)
 			}
 
-			apiKey := body.APIKey
+			authHeader := e.Request.Header.Get("Authorization")
+			if authHeader == "" {
+				return e.UnauthorizedError("Missing Authorization header", nil)
+			}
+
+			apiKey := ""
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				apiKey = authHeader[7:]
+			} else {
+				return e.UnauthorizedError("Invalid Authorization header format", nil)
+			}
+
 			hashedAPIKey := security.SHA256(apiKey)
 			apiKeyRecord, err := app.FindFirstRecordByData(apiKeysCollection, "hashed_key", hashedAPIKey)
 			if err != nil || apiKeyRecord == nil {
-				return e.UnauthorizedError("Invalid API key", map[string]any{})
+				return e.UnauthorizedError("Invalid API key", nil)
 			}
 
 			userId := apiKeyRecord.GetString("user")
 			user, err := e.App.FindRecordById(collections.Users, userId)
 			if err != nil || user == nil {
-				return e.UnauthorizedError("Invalid API key", map[string]any{})
+				return e.UnauthorizedError("Invalid API key", nil)
 			}
 
 			tierId := user.GetString("tier")
 			tier, err := e.App.FindRecordById(collections.SubscriptionTiers, tierId)
 			if err != nil || tier == nil {
-				return e.InternalServerError("something went wrong", map[string]any{})
+				return e.InternalServerError("something went wrong", nil)
 			}
 
 			if tier.GetString("price_id") == "free" {
-				return e.ForbiddenError("Free tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
+				return e.ForbiddenError("Free tier users cannot use the API. Please upgrade your subscription.", nil)
 			}
 
 			if tier.GetString("lookup_key") == "basic_monthly" || tier.GetString("lookup_key") == "basic_yearly" {
-				return e.ForbiddenError("Basic tier users cannot use the API. Please upgrade your subscription.", map[string]any{})
+				return e.ForbiddenError("Basic tier users cannot use the API. Please upgrade your subscription.", nil)
 			}
 
 			job, err := e.App.FindRecordById(collections.Jobs, jobId)
 			if err != nil || job == nil {
-				return e.NotFoundError("Job not found", map[string]any{})
+				return e.NotFoundError("Job not found", nil)
 			}
 
 			if job.GetString("status") != "SUCCESS" {
-				return e.BadRequestError("Job has not completed successfully", map[string]any{})
+				return e.BadRequestError("Job has not completed successfully", nil)
 			}
 
 			downloadId := job.GetString("download")
 			if downloadId == "" {
-				return e.BadRequestError("Job does not have an associated download", map[string]any{})
+				return e.BadRequestError("Job does not have an associated download", nil)
 			}
 
 			download, err := e.App.FindRecordById(collections.Downloads, downloadId)
 			if err != nil || download == nil {
-				return e.NotFoundError("Download not found", map[string]any{})
+				return e.NotFoundError("Download not found", nil)
 			}
 
 			fsys, err := app.NewFilesystem()
 			if err != nil {
-				return e.InternalServerError("internal server error", map[string]any{})
+				return e.InternalServerError("internal server error", nil)
 			}
 			defer fsys.Close()
 
@@ -347,22 +373,235 @@ func Init(app *pocketbase.PocketBase) error {
 
 			r, err := fsys.GetReader(fileKey)
 			if err != nil {
-				return e.InternalServerError("internal server error", map[string]any{})
+				return e.InternalServerError("internal server error", nil)
 			}
 			defer r.Close()
 
 			content := new(bytes.Buffer)
 			_, err = io.Copy(content, r)
 			if err != nil {
-				return e.InternalServerError("internal server error", map[string]any{})
+				return e.InternalServerError("internal server error", nil)
 			}
 
 			return e.Blob(200, "audio/mpeg", content.Bytes())
+		})
+
+		type AddUrlRequestBody struct {
+			PodcastID string `json:"podcast_id"`
+			URL       string `json:"url"`
+		}
+
+		se.Router.POST("/api/v1/podcasts/add-url", func(e *core.RequestEvent) error {
+			body := AddUrlRequestBody{}
+			if err := e.BindBody(&body); err != nil {
+				return e.BadRequestError("failed to parse request body", nil)
+			}
+
+			authHeader := e.Request.Header.Get("Authorization")
+			if authHeader == "" {
+				return e.UnauthorizedError("Missing Authorization header", nil)
+			}
+
+			apiKey := ""
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				apiKey = authHeader[7:]
+			} else {
+				return e.UnauthorizedError("Invalid Authorization header format", nil)
+			}
+
+			hashedAPIKey := security.SHA256(apiKey)
+			apiKeyRecord, err := e.App.FindFirstRecordByData(collections.APIKeys, "hashed_key", hashedAPIKey)
+			if err != nil || apiKeyRecord == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			userId := apiKeyRecord.GetString("user")
+			user, err := e.App.FindRecordById(collections.Users, userId)
+			if err != nil || user == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
+				"user": user.Id,
+			})
+			if err != nil || monthlyUsageRecords == nil {
+				e.App.Logger().Error("Add URL API: failed to find monthly usage record: " + err.Error())
+				return e.Next()
+			}
+			monthlyUsage := monthlyUsageRecords[0]
+
+			usageLimit := monthlyUsage.GetInt("limit")
+			currentUsage := monthlyUsage.GetInt("usage")
+			if currentUsage >= usageLimit {
+				return e.ForbiddenError("Monthly usage limit exceeded", nil)
+			}
+
+			itemsCollection, err := e.App.FindCollectionByNameOrId(collections.Items)
+			if err != nil {
+				return e.InternalServerError("internal server error", nil)
+			}
+
+			item := core.NewRecord(itemsCollection)
+			item.Set("user", user.Id)
+			item.Set("podcast", body.PodcastID)
+			item.Set("url", body.URL)
+			item.Set("type", "url")
+			item.Set("status", "CREATED")
+			if err := e.App.Save(item); err != nil {
+				return e.InternalServerError("internal server error", nil)
+			}
+
+			return e.JSON(http.StatusOK, map[string]string{"status": "success", "item_id": item.Id})
+		})
+
+		se.Router.GET("/api/v1/poll/item/{itemId}", func(e *core.RequestEvent) error {
+			itemId := e.Request.PathValue("itemId")
+			if itemId == "" {
+				return e.BadRequestError("Missing itemId parameter", nil)
+			}
+
+			item, err := e.App.FindRecordById(collections.Items, itemId)
+			if err != nil || item == nil {
+				return e.NotFoundError("Item not found", nil)
+			}
+
+			return e.JSON(200, map[string]string{
+				"status": item.GetString("status"),
+			})
+		})
+
+		se.Router.GET("/api/v1/list-podcasts", func(e *core.RequestEvent) error {
+			authHeader := e.Request.Header.Get("Authorization")
+			if authHeader == "" {
+				return e.UnauthorizedError("Missing Authorization header", nil)
+			}
+
+			apiKey := ""
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				apiKey = authHeader[7:]
+			} else {
+				return e.UnauthorizedError("Invalid Authorization header format", nil)
+			}
+
+			hashedAPIKey := security.SHA256(apiKey)
+			apiKeyRecord, err := app.FindFirstRecordByData(collections.APIKeys, "hashed_key", hashedAPIKey)
+			if err != nil || apiKeyRecord == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			userId := apiKeyRecord.GetString("user")
+			user, err := e.App.FindRecordById(collections.Users, userId)
+			if err != nil || user == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			podcasts, err := e.App.FindAllRecords(collections.Podcasts, dbx.HashExp{"user": user.Id})
+			if err != nil {
+				return e.NotFoundError("No podcasts found", nil)
+			}
+
+			return e.JSON(http.StatusOK, podcasts)
+		})
+
+		se.Router.GET(("/api/v1/get-usage"), func(e *core.RequestEvent) error {
+			authHeader := e.Request.Header.Get("Authorization")
+			if authHeader == "" {
+				return e.UnauthorizedError("Missing Authorization header", nil)
+			}
+
+			apiKey := ""
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				apiKey = authHeader[7:]
+			} else {
+				return e.UnauthorizedError("Invalid Authorization header format", nil)
+			}
+
+			hashedAPIKey := security.SHA256(apiKey)
+			apiKeyRecord, err := app.FindFirstRecordByData(collections.APIKeys, "hashed_key", hashedAPIKey)
+			if err != nil || apiKeyRecord == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			userId := apiKeyRecord.GetString("user")
+			user, err := e.App.FindRecordById(collections.Users, userId)
+			if err != nil || user == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
+				"user": user.Id,
+			})
+			if err != nil || monthlyUsageRecords == nil {
+				e.App.Logger().Error("Add URL API: failed to find monthly usage record: " + err.Error())
+				return e.Next()
+			}
+			monthlyUsage := monthlyUsageRecords[0]
+
+			usageLimit := monthlyUsage.GetInt("limit")
+			currentUsage := monthlyUsage.GetInt("usage")
+
+			return e.JSON(http.StatusOK, map[string]any{
+				"usage": usageLimit,
+				"used":  currentUsage,
+			})
+		})
+
+		se.Router.GET("/api/v1/poll/jobs", func(e *core.RequestEvent) error {
+			authHeader := e.Request.Header.Get("Authorization")
+			if authHeader == "" {
+				return e.UnauthorizedError("Missing Authorization header", nil)
+			}
+
+			apiKey := ""
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				apiKey = authHeader[7:]
+			} else {
+				return e.UnauthorizedError("Invalid Authorization header format", nil)
+			}
+
+			hashedAPIKey := security.SHA256(apiKey)
+			apiKeyRecord, err := app.FindFirstRecordByData(collections.APIKeys, "hashed_key", hashedAPIKey)
+			if err != nil || apiKeyRecord == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			userId := apiKeyRecord.GetString("user")
+			user, err := e.App.FindRecordById(collections.Users, userId)
+			if err != nil || user == nil {
+				return e.UnauthorizedError("Invalid API key", nil)
+			}
+
+			jobs, err := e.App.FindRecordsByFilter(collections.Jobs, "user = {:user}", "-created", 0, 0, dbx.Params{
+				"user": user.Id,
+			})
+			if err != nil {
+				return e.NotFoundError("No jobs found", nil)
+			}
+
+			jobsResponse := []JobResponse{}
+			for _, job := range jobs {
+				url := job.GetString("url")
+				id := job.Id
+				status := job.GetString("status")
+				title := job.GetString("title")
+				createdAt := job.GetString("created")
+
+				jobsResponse = append(jobsResponse, JobResponse{
+					ID:     id,
+					URL:    url,
+					Status: status,
+					Title:  title,
+					Created: createdAt,
+				})
+			}
+
+			return e.JSON(200, map[string]any{
+				"jobs": jobsResponse,
+			})
 		})
 
 		return se.Next()
 	})
 
 	return nil
-
 }

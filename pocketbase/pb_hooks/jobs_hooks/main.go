@@ -19,7 +19,23 @@ func Init(app *pocketbase.PocketBase) error {
 		youtubeUrlRegex := regexp.MustCompile(`^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}(&.*)?$`)
 
 		if !youtubeUrlRegex.MatchString(url) {
-			return e.BadRequestError("Invalid YouTube URL", map[string]any{})
+			return e.BadRequestError("Invalid YouTube URL", nil)
+		}
+
+		monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
+			"user": e.Auth.Id,
+		})
+		if err != nil || monthlyUsageRecords == nil {
+			e.App.Logger().Error("Jobs Hooks: failed to find monthly usage record: " + err.Error())
+			return e.Next()
+		}
+		monthlyUsage := monthlyUsageRecords[0]
+
+		usageLimit := monthlyUsage.GetInt("limit")
+		currentUsage := monthlyUsage.GetInt("usage")
+
+		if currentUsage >= usageLimit {
+			return e.ForbiddenError("Monthly usage limit exceeded", nil)
 		}
 
 		return e.Next()
@@ -74,6 +90,8 @@ func Init(app *pocketbase.PocketBase) error {
 				e.App.Logger().Error("Jobs Hooks: failed to get video info: " + err.Error())
 				return
 			}
+
+			job.Set("title", result.Info.Title)
 
 			downloadSize := result.Info.Filesize
 			if downloadSize == 0 {
