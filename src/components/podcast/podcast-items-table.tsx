@@ -104,7 +104,7 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
                     {data?.title}
                   </TableCell>
                   <TableCell>{data?.duration ? formatDuration(data.duration) : "-"}</TableCell>
-                  <TableCell className="max-w-[150px]" title={item.expand.download?.channel}>
+                  <TableCell className="max-w-[150px] truncate" title={item.expand.download?.channel}>
                     {isUpload ? "-" : item.expand.download?.channel}
                   </TableCell>
                   <TableCell className="max-w-[150px] truncate" title={item.url}>
