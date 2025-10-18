@@ -142,6 +142,7 @@ export type ItemsRecord = {
 	id: string
 	podcast: RecordIdString
 	status: ItemsStatusOptions
+	title?: string
 	type: ItemsTypeOptions
 	updated?: IsoDateString
 	upload?: RecordIdString
@@ -164,6 +165,7 @@ export type JobsRecord = {
 	error?: string
 	id: string
 	status: JobsStatusOptions
+	title?: string
 	updated?: IsoDateString
 	url: string
 	user: RecordIdString
