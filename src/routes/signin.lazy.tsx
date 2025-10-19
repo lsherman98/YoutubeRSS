@@ -1,5 +1,6 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { pb } from "@/lib/pocketbase";
 import { Separator } from "@/components/ui/separator";
+import { Toaster } from "@/components/ui/sonner";
 import { getRedirectAfterSignIn } from "@/lib/auth";
 import type { AuthMethodsList, RecordAuthResponse } from "pocketbase";
 import type { UsersResponse } from "@/lib/pocketbase-types";
@@ -54,18 +56,26 @@ const UserLoginForm = () => {
     <form
       onSubmit={async (event) => {
         event.preventDefault();
-        const form = event.target as HTMLFormElement;
-        const email = form.email.value;
-        const password = form.password.value;
-        const isAdmin = form["admin-auth"]?.[1]?.checked;
 
-        if (isAdmin) {
-          await pb.collection("_superusers").authWithPassword(email, password);
-        } else {
-          await pb.collection("users").authWithPassword(email, password);
+        try {
+          const form = event.target as HTMLFormElement;
+          const email = form.email.value;
+          const password = form.password.value;
+          const isAdmin = form["admin-auth"]?.[1]?.checked;
+
+          if (isAdmin) {
+            await pb.collection("_superusers").authWithPassword(email, password);
+          } else {
+            await pb.collection("users").authWithPassword(email, password);
+          }
+
+          toast.success("Successfully signed in!");
+          navigate({ to: getRedirectAfterSignIn() });
+        } catch (error: any) {
+          console.error(error);
+          const message = "Failed to sign in. Please check your credentials.";
+          toast.error(message);
         }
-
-        navigate({ to: getRedirectAfterSignIn() });
       }}
       className="flex flex-col gap-4"
     >
@@ -93,25 +103,42 @@ const UserCreateForm = () => {
     <form
       onSubmit={async (event) => {
         event.preventDefault();
-        const form = event.target as HTMLFormElement;
-        const username = form.username.value;
-        const email = form.email.value;
-        const password = form.password.value;
-
-        const data = {
-          name: username,
-          email,
-          password,
-          passwordConfirm: password,
-        };
 
         try {
+          const form = event.target as HTMLFormElement;
+          const username = form.username.value;
+          const email = form.email.value;
+          const password = form.password.value;
+
+          const data = {
+            name: username,
+            email,
+            password,
+            passwordConfirm: password,
+          };
+
           await pb.collection("users").create(data);
           await pb.collection("users").requestVerification(email);
           await pb.collection("users").authWithPassword(email, password);
+
+          toast.success("Account created successfully!");
           navigate({ to: getRedirectAfterSignIn() });
-        } catch (error) {
+        } catch (error: any) {
           console.error(error);
+          let message = "Failed to create account. Please try again.";
+
+          if (error?.data?.data) {
+            const errorData = error.data.data;
+            if (errorData.email) {
+              message = "This email is already in use.";
+            } else if (errorData.password) {
+              message = "Password does not meet requirements.";
+            }
+          } else if (error?.message) {
+            message = error.message;
+          }
+
+          toast.error(message);
         }
       }}
       className="flex flex-col gap-4"
@@ -136,16 +163,71 @@ const UserCreateForm = () => {
   );
 };
 
+const PasswordResetRequestForm = ({ onBack }: { onBack: () => void }) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  return (
+    <form
+      onSubmit={async (event) => {
+        event.preventDefault();
+        setIsLoading(true);
+
+        try {
+          const form = event.target as HTMLFormElement;
+          const email = form.email.value;
+
+          await pb.collection("users").requestPasswordReset(email);
+
+          toast.success("Password reset email sent! Please check your inbox.");
+          onBack();
+        } catch (error: any) {
+          console.error(error);
+          const message = error?.message || "Failed to send password reset email.";
+          toast.error(message);
+        } finally {
+          setIsLoading(false);
+        }
+      }}
+      className="flex flex-col gap-4"
+    >
+      <CardDescription>Enter your email address and we'll send you a link to reset your password.</CardDescription>
+
+      <div className="grid gap-2">
+        <Label htmlFor="reset-email">Email</Label>
+        <Input id="reset-email" type="email" name="email" placeholder="your@email.com" required />
+      </div>
+
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? "Sending..." : "Send Reset Link"}
+      </Button>
+
+      <div className="flex justify-center">
+        <Button onClick={onBack} variant="link" type="button">
+          Back to sign in
+        </Button>
+      </div>
+    </form>
+  );
+};
+
 const UserAuthForm = () => {
   const [isSignIn, setIsSignIn] = useState(true);
+  const [isResetPassword, setIsResetPassword] = useState(false);
+
+  if (isResetPassword) {
+    return <PasswordResetRequestForm onBack={() => setIsResetPassword(false)} />;
+  }
 
   return (
     <>
       <CardDescription>Use your email and password to access your account.</CardDescription>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
+        <Button onClick={() => setIsResetPassword(true)} variant="link" className="px-0">
+          Forgot password?
+        </Button>
         <Button onClick={() => setIsSignIn(!isSignIn)} variant="link">
-          {isSignIn ? "Create an account" : "Login with your existing account"}
+          {isSignIn ? "Create an account" : "Login with existing account"}
         </Button>
       </div>
 
@@ -172,6 +254,7 @@ function LoginForm() {
 
   return (
     <div className="flex justify-center items-center h-screen">
+      <Toaster position="top-center" />
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
@@ -185,13 +268,20 @@ function LoginForm() {
               className="w-full"
               variant="outline"
               onClick={async () => {
-                const authData = await pb.collection("users").authWithOAuth2({
-                  provider: provider.name,
-                });
+                try {
+                  const authData = await pb.collection("users").authWithOAuth2({
+                    provider: provider.name,
+                  });
 
-                await updateProfileFromOAuth2(authData);
+                  await updateProfileFromOAuth2(authData);
 
-                navigate({ to: getRedirectAfterSignIn() });
+                  toast.success("Successfully signed in!");
+                  navigate({ to: getRedirectAfterSignIn() });
+                } catch (error: any) {
+                  console.error(error);
+                  const message = "Failed to sign in.";
+                  toast.error(message);
+                }
               }}
             >
               <img src={`${pb.baseURL}_/images/oauth2/${provider.name}.svg`} className="h-4 w-4 mr-4" />
