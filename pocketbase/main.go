@@ -13,6 +13,7 @@ import (
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/file_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/items_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/jobs_hooks"
+	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/mailer_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/podcast_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/share_url_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/stripe_hooks"
@@ -72,6 +73,10 @@ func main() {
 	}
 
 	if err := cron_jobs.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := mailer_hooks.Init(app); err != nil {
 		log.Fatal(err)
 	}
 
