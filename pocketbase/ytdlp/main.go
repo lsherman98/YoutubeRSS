@@ -55,6 +55,11 @@ func New(app core.App) *Client {
 			ProxyAuth: auth,
 			ProxyURL:  url.String(),
 		}
+	case "evomi":
+		return &Client{
+			App:      app,
+			ProxyURL: os.Getenv("EVOMI_PROXY_URL"),
+		}
 	}
 
 	return &Client{}

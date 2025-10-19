@@ -116,9 +116,12 @@ func Init(app *pocketbase.PocketBase) error {
 					return
 				}
 
-				fileSize := result.Info.Filesize
-				if fileSize == 0 {
-					fileSize = result.Info.FilesizeApprox
+				fileSize := 0
+				if result.Info.Filesize != 0 {
+					fileSize = int(result.Info.Filesize)
+				} else {
+					length := result.Info.Duration
+					fileSize = int(float64(length) * 25000)
 				}
 
 				usageLimit := monthlyUsage.GetInt("limit")
