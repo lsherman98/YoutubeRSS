@@ -13,6 +13,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LandingIndexRouteImport } from './routes/landing/index'
 import { Route as AppWebhooksIndexRouteImport } from './routes/_app/webhooks/index'
 import { Route as AppSubscriptionsIndexRouteImport } from './routes/_app/subscriptions/index'
 import { Route as AppPodcastsIndexRouteImport } from './routes/_app/podcasts/index'
@@ -34,6 +35,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LandingIndexRoute = LandingIndexRouteImport.update({
+  id: '/landing/',
+  path: '/landing/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppWebhooksIndexRoute = AppWebhooksIndexRouteImport.update({
@@ -70,6 +76,7 @@ const AppPodcastsIdRoute = AppPodcastsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/signin': typeof SigninLazyRoute
+  '/landing': typeof LandingIndexRoute
   '/podcasts/$id': typeof AppPodcastsIdRoute
   '/jobs': typeof AppJobsIndexRoute
   '/keys': typeof AppKeysIndexRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/signin': typeof SigninLazyRoute
+  '/landing': typeof LandingIndexRoute
   '/podcasts/$id': typeof AppPodcastsIdRoute
   '/jobs': typeof AppJobsIndexRoute
   '/keys': typeof AppKeysIndexRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/signin': typeof SigninLazyRoute
+  '/landing/': typeof LandingIndexRoute
   '/_app/podcasts/$id': typeof AppPodcastsIdRoute
   '/_app/jobs/': typeof AppJobsIndexRoute
   '/_app/keys/': typeof AppKeysIndexRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/signin'
+    | '/landing'
     | '/podcasts/$id'
     | '/jobs'
     | '/keys'
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/signin'
+    | '/landing'
     | '/podcasts/$id'
     | '/jobs'
     | '/keys'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/signin'
+    | '/landing/'
     | '/_app/podcasts/$id'
     | '/_app/jobs/'
     | '/_app/keys/'
@@ -137,6 +149,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   SigninLazyRoute: typeof SigninLazyRoute
+  LandingIndexRoute: typeof LandingIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -160,6 +173,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landing/': {
+      id: '/landing/'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof LandingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/webhooks/': {
@@ -231,6 +251,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   SigninLazyRoute: SigninLazyRoute,
+  LandingIndexRoute: LandingIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
