@@ -96,7 +96,7 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 	}
 	defer download.Close()
 
-	directory := "output"
+	directory := "pb_data/output"
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
 		c.App.Logger().Info("YTDLP: output directory does not exist, creating it")
 		err = os.Mkdir(directory, 0755)
