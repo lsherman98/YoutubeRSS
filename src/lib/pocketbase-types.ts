@@ -13,6 +13,7 @@ export enum Collections {
 	Superusers = "_superusers",
 	ApiKeys = "api_keys",
 	Downloads = "downloads",
+	Issues = "issues",
 	Items = "items",
 	Jobs = "jobs",
 	MonthlyUsage = "monthly_usage",
@@ -123,6 +124,15 @@ export type DownloadsRecord = {
 	title: string
 	updated?: IsoDateString
 	video_id: string
+}
+
+export type IssuesRecord = {
+	content?: string
+	created?: IsoDateString
+	id: string
+	screenshots?: string[]
+	updated?: IsoDateString
+	user?: RecordIdString
 }
 
 export enum ItemsTypeOptions {
@@ -337,6 +347,7 @@ export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemF
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
 export type ApiKeysResponse<Texpand = unknown> = Required<ApiKeysRecord> & BaseSystemFields<Texpand>
 export type DownloadsResponse<Texpand = unknown> = Required<DownloadsRecord> & BaseSystemFields<Texpand>
+export type IssuesResponse<Texpand = unknown> = Required<IssuesRecord> & BaseSystemFields<Texpand>
 export type ItemsResponse<Texpand = unknown> = Required<ItemsRecord> & BaseSystemFields<Texpand>
 export type JobsResponse<Texpand = unknown> = Required<JobsRecord> & BaseSystemFields<Texpand>
 export type MonthlyUsageResponse<Texpand = unknown> = Required<MonthlyUsageRecord> & BaseSystemFields<Texpand>
@@ -360,6 +371,7 @@ export type CollectionRecords = {
 	_superusers: SuperusersRecord
 	api_keys: ApiKeysRecord
 	downloads: DownloadsRecord
+	issues: IssuesRecord
 	items: ItemsRecord
 	jobs: JobsRecord
 	monthly_usage: MonthlyUsageRecord
@@ -382,6 +394,7 @@ export type CollectionResponses = {
 	_superusers: SuperusersResponse
 	api_keys: ApiKeysResponse
 	downloads: DownloadsResponse
+	issues: IssuesResponse
 	items: ItemsResponse
 	jobs: JobsResponse
 	monthly_usage: MonthlyUsageResponse
@@ -407,6 +420,7 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: '_superusers'): RecordService<SuperusersResponse>
 	collection(idOrName: 'api_keys'): RecordService<ApiKeysResponse>
 	collection(idOrName: 'downloads'): RecordService<DownloadsResponse>
+	collection(idOrName: 'issues'): RecordService<IssuesResponse>
 	collection(idOrName: 'items'): RecordService<ItemsResponse>
 	collection(idOrName: 'jobs'): RecordService<JobsResponse>
 	collection(idOrName: 'monthly_usage'): RecordService<MonthlyUsageResponse>

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addAudioFiles, addYoutubeUrls, createCheckoutSession, createJobs, createPodcast, createPortalSession, createWebhook, deletePodcast, deletePodcastItem, deleteWebhook, generateAPIKey, revokeAPIKey, updatePodcast, updateWebhook, type AudioUpload, type SubscriptionType } from "./api";
+import { addAudioFiles, addYoutubeUrls, createCheckoutSession, createIssue, createJobs, createPodcast, createPortalSession, createWebhook, deletePodcast, deletePodcastItem, deleteWebhook, generateAPIKey, revokeAPIKey, updatePodcast, updateWebhook, type AudioUpload, type SubscriptionType } from "./api";
 import { handleError } from "../utils";
 import type { PodcastsRecord, WebhooksRecord } from "../pocketbase-types";
 
@@ -159,6 +159,13 @@ export function useCreateCheckoutSession() {
 export function useCreatePortalSession() {
     return useMutation({
         mutationFn: () => createPortalSession(),
+        onError: handleError,
+    })
+}
+
+export function useCreateIssue() {
+    return useMutation({
+        mutationFn: ({ content, screenshots }: { content: string, screenshots?: File[] }) => createIssue(content, screenshots),
         onError: handleError,
     })
 }

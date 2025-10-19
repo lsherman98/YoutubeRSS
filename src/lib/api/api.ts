@@ -189,3 +189,11 @@ export const createPortalSession = async () => {
         method: 'GET'
     });
 }
+
+export async function createIssue(content: string, screenshots?: File[]) {
+    return await pb.collection(Collections.Issues).create({
+        user: getUserId(),
+        content,
+        screenshots
+    });
+}

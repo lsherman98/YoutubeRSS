@@ -1,7 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useLocation, useMatches } from "@tanstack/react-router";
-
+import { ReportIssueDialog } from "./report-issue-dialog";
 
 export function AppHeader() {
   const route = useLocation();
@@ -14,9 +14,9 @@ export function AppHeader() {
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <h1 className="text-base font-medium">{match?.staticData.routeName}</h1>
-        {/* <div className="ml-auto flex items-center gap-2">
-          <ModeToggle />
-        </div> */}
+        <div className="ml-auto">
+          <ReportIssueDialog />
+        </div>
       </div>
     </header>
   );
