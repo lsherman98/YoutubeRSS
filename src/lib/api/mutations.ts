@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addAudioFiles, addYoutubeUrls, createCheckoutSession, createIssue, createJobs, createPodcast, createPortalSession, createWebhook, deletePodcast, deletePodcastItem, deleteWebhook, generateAPIKey, revokeAPIKey, updatePodcast, updateWebhook, type AudioUpload, type SubscriptionType } from "./api";
+import { addAudioFiles, addYoutubeUrls, createCheckoutSession, createIssue, createJobs, createPodcast, createPortalSession, createWebhook, deleteAccount, deletePodcast, deletePodcastItem, deleteWebhook, generateAPIKey, revokeAPIKey, updatePodcast, updateUsername, updateWebhook, type AudioUpload, type SubscriptionType } from "./api";
 import { handleError } from "../utils";
 import type { PodcastsRecord, WebhooksRecord } from "../pocketbase-types";
 
@@ -166,6 +166,20 @@ export function useCreatePortalSession() {
 export function useCreateIssue() {
     return useMutation({
         mutationFn: ({ content, screenshots }: { content: string, screenshots?: File[] }) => createIssue(content, screenshots),
+        onError: handleError,
+    })
+}
+
+export function useUpdateUsername() {
+    return useMutation({
+        mutationFn: (username: string) => updateUsername(username),
+        onError: handleError,
+    })
+}
+
+export function useDeleteAccount() {
+    return useMutation({
+        mutationFn: () => deleteAccount(),
         onError: handleError,
     })
 }

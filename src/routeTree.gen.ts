@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LandingIndexRouteImport } from './routes/landing/index'
 import { Route as AppWebhooksIndexRouteImport } from './routes/_app/webhooks/index'
 import { Route as AppSubscriptionsIndexRouteImport } from './routes/_app/subscriptions/index'
+import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppPodcastsIndexRouteImport } from './routes/_app/podcasts/index'
 import { Route as AppKeysIndexRouteImport } from './routes/_app/keys/index'
 import { Route as AppJobsIndexRouteImport } from './routes/_app/jobs/index'
@@ -52,6 +53,11 @@ const AppSubscriptionsIndexRoute = AppSubscriptionsIndexRouteImport.update({
   path: '/subscriptions/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPodcastsIndexRoute = AppPodcastsIndexRouteImport.update({
   id: '/podcasts/',
   path: '/podcasts/',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof AppJobsIndexRoute
   '/keys': typeof AppKeysIndexRoute
   '/podcasts': typeof AppPodcastsIndexRoute
+  '/settings': typeof AppSettingsIndexRoute
   '/subscriptions': typeof AppSubscriptionsIndexRoute
   '/webhooks': typeof AppWebhooksIndexRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/jobs': typeof AppJobsIndexRoute
   '/keys': typeof AppKeysIndexRoute
   '/podcasts': typeof AppPodcastsIndexRoute
+  '/settings': typeof AppSettingsIndexRoute
   '/subscriptions': typeof AppSubscriptionsIndexRoute
   '/webhooks': typeof AppWebhooksIndexRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/_app/jobs/': typeof AppJobsIndexRoute
   '/_app/keys/': typeof AppKeysIndexRoute
   '/_app/podcasts/': typeof AppPodcastsIndexRoute
+  '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/subscriptions/': typeof AppSubscriptionsIndexRoute
   '/_app/webhooks/': typeof AppWebhooksIndexRoute
 }
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/keys'
     | '/podcasts'
+    | '/settings'
     | '/subscriptions'
     | '/webhooks'
   fileRoutesByTo: FileRoutesByTo
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/keys'
     | '/podcasts'
+    | '/settings'
     | '/subscriptions'
     | '/webhooks'
   id:
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/_app/jobs/'
     | '/_app/keys/'
     | '/_app/podcasts/'
+    | '/_app/settings/'
     | '/_app/subscriptions/'
     | '/_app/webhooks/'
   fileRoutesById: FileRoutesById
@@ -196,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubscriptionsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/': {
+      id: '/_app/settings/'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/podcasts/': {
       id: '/_app/podcasts/'
       path: '/podcasts'
@@ -232,6 +251,7 @@ interface AppRouteChildren {
   AppJobsIndexRoute: typeof AppJobsIndexRoute
   AppKeysIndexRoute: typeof AppKeysIndexRoute
   AppPodcastsIndexRoute: typeof AppPodcastsIndexRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
   AppSubscriptionsIndexRoute: typeof AppSubscriptionsIndexRoute
   AppWebhooksIndexRoute: typeof AppWebhooksIndexRoute
 }
@@ -241,6 +261,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppJobsIndexRoute: AppJobsIndexRoute,
   AppKeysIndexRoute: AppKeysIndexRoute,
   AppPodcastsIndexRoute: AppPodcastsIndexRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
   AppSubscriptionsIndexRoute: AppSubscriptionsIndexRoute,
   AppWebhooksIndexRoute: AppWebhooksIndexRoute,
 }

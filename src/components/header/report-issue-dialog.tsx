@@ -58,7 +58,7 @@ export function ReportIssueDialog() {
         <DialogHeader>
           <DialogTitle>Report an Issue</DialogTitle>
           <DialogDescription>
-            Describe the issue you're experiencing. You can also attach screenshots to help us understand better.
+            Describe the issue you're experiencing. You can also attach screenshots to help us understand better what went wrong.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

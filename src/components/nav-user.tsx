@@ -11,6 +11,7 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { pb } from "@/lib/pocketbase";
 import { CircleUser, EllipsisVertical, LogOut } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export function NavUser({ email }: { email: string }) {
   const { isMobile } = useSidebar();
@@ -55,9 +56,11 @@ export function NavUser({ email }: { email: string }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <CircleUser />
-                Account
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="cursor-pointer">
+                  <CircleUser />
+                  Account
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

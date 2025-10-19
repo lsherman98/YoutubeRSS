@@ -197,3 +197,15 @@ export async function createIssue(content: string, screenshots?: File[]) {
         screenshots
     });
 }
+
+export async function updateUsername(username: string) {
+    const userId = getUserId();
+    if (!userId) throw new Error("User not authenticated");
+    return await pb.collection(Collections.Users).update(userId, { name: username });
+}
+
+export async function deleteAccount() {
+    const userId = getUserId();
+    if (!userId) throw new Error("User not authenticated");
+    return await pb.collection(Collections.Users).delete(userId);
+}
