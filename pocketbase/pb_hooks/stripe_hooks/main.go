@@ -236,7 +236,6 @@ func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscrip
 	user, err := e.App.FindRecordById(collections.Users, customer.GetString("user"))
 	if err != nil {
 		e.App.Logger().Info("Stripe Hooks: failed to find user record")
-		return err
 	}
 
 	priceId := subscription.Items.Data[0].Price.ID
@@ -257,23 +256,30 @@ func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscrip
 		e.App.Logger().Error("Stripe Hooks: failed to find subscription tier: " + err.Error())
 	}
 
-	monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
-		"user": user.Id,
-	})
-	if err != nil || monthlyUsageRecords == nil {
-		e.App.Logger().Error("Stripe Hooks: failed to find monthly usage record: " + err.Error())
-		return err
-	}
-	usageRecord := monthlyUsageRecords[0]
+	if user != nil {
+		monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
+			"user": user.Id,
+		})
+		if err != nil || monthlyUsageRecords == nil || len(monthlyUsageRecords) == 0 {
+			e.App.Logger().Error("Stripe Hooks: failed to find monthly usage record: " + err.Error())
+		} else {
+			usageRecord := monthlyUsageRecords[0]
+			usageRecord.Set("tier", tier.Id)
+			usageRecord.Set("limit", tier.Get("monthly_usage_limit"))
+			if !cancelled {
+				usageRecord.Set("billing_cycle_start", time.Unix(subscription.Items.Data[0].CurrentPeriodStart, 0).UTC().Format(time.RFC3339))
+				usageRecord.Set("billing_cycle_end", time.Unix(subscription.Items.Data[0].CurrentPeriodEnd, 0).UTC().Format(time.RFC3339))
+			}
+			if err := e.App.Save(usageRecord); err != nil {
+				return err
+			}
+		}
 
-	usageRecord.Set("tier", tier.Id)
-	usageRecord.Set("limit", tier.Get("monthly_usage_limit"))
-	if !cancelled {
-		usageRecord.Set("billing_cycle_start", time.Unix(subscription.Items.Data[0].CurrentPeriodStart, 0).UTC().Format(time.RFC3339))
-		usageRecord.Set("billing_cycle_end", time.Unix(subscription.Items.Data[0].CurrentPeriodEnd, 0).UTC().Format(time.RFC3339))
+		user.Set("tier", tier.Id)
+		if err := e.App.Save(user); err != nil {
+			return err
+		}
 	}
-
-	user.Set("tier", tier.Id)
 
 	subscriptionRecord.Set("tier", tier.Id)
 	subscriptionRecord.Set("subscription_id", subscription.ID)
@@ -289,15 +295,7 @@ func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscrip
 	subscriptionRecord.Set("created", subscription.Created)
 	subscriptionRecord.Set("ended_at", subscription.EndedAt)
 
-	if err := e.App.Save(user); err != nil {
-		return err
-	}
-
 	if err := e.App.Save(subscriptionRecord); err != nil {
-		return err
-	}
-
-	if err := e.App.Save(usageRecord); err != nil {
 		return err
 	}
 

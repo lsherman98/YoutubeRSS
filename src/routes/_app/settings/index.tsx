@@ -66,8 +66,7 @@ function SettingsPage() {
       toast.success("Account deleted successfully");
       pb.authStore.clear();
       window.location.href = "/";
-    } catch (error: any) {
-    }
+    } catch (error: any) {}
   };
 
   const getTierBadgeVariant = (key: string) => {
@@ -166,7 +165,7 @@ function SettingsPage() {
                   </p>
                 </div>
                 <Badge variant={getTierBadgeVariant(tierLookupKey)} className="text-lg px-4 py-1">
-                  {currentTier}
+                  {currentTier.split(" ")[0]}
                 </Badge>
               </div>
               {usage?.limit && (
@@ -174,7 +173,7 @@ function SettingsPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Monthly Usage</span>
                     <span className="font-medium">
-                      {formatFileSize((usage.usage || 0) * 1024 * 1024)} / {formatFileSize(usage.limit * 1024 * 1024)}
+                      {formatFileSize(usage.usage)} / {formatFileSize(usage.limit)}
                     </span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">

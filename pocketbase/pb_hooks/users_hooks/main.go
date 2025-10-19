@@ -47,7 +47,7 @@ func Init(app *pocketbase.PocketBase) error {
 		return e.Next()
 	})
 
-	app.OnRecordAfterDeleteSuccess(collections.Users).BindFunc(func(e *core.RecordEvent) error {
+	app.OnRecordDeleteRequest(collections.Users).BindFunc(func(e *core.RecordRequestEvent) error {
 		stripe.Key = os.Getenv("STRIPE_API_KEY")
 		stripeTest := os.Getenv("STRIPE_TEST") == "true"
 		if stripeTest {
