@@ -1,13 +1,12 @@
 package items_hooks
 
 import (
-	"os"
 	"regexp"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
+	"github.com/lsherman98/yt-rss/pocketbase/downloader"
 	"github.com/lsherman98/yt-rss/pocketbase/files"
 	"github.com/lsherman98/yt-rss/pocketbase/rss_utils"
-	"github.com/lsherman98/yt-rss/pocketbase/ytdlp"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -43,10 +42,8 @@ func Init(app *pocketbase.PocketBase) error {
 
 	app.OnRecordAfterCreateSuccess(collections.Items).BindFunc(func(e *core.RecordEvent) error {
 		itemRecord := e.Record
-		url := itemRecord.GetString("url")
 		podcastId := itemRecord.GetString("podcast")
 		itemType := itemRecord.GetString("type")
-		user := itemRecord.GetString("user")
 
 		itemRecord.Set("status", "CREATED")
 		if err := e.App.Save(itemRecord); err != nil {
@@ -54,143 +51,47 @@ func Init(app *pocketbase.PocketBase) error {
 			return e.Next()
 		}
 
-		podcast, err := e.App.FindRecordById(collections.Podcasts, podcastId)
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to find podcast record: " + err.Error())
-			return e.Next()
-		}
-
-		fileClient, err := files.NewFileClient(e.App, podcast, "file")
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to create file client: " + err.Error())
-			return e.Next()
-		}
-
-		content, err := fileClient.GetXMLFile()
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to get XML file: " + err.Error())
-			return e.Next()
-		}
-
-		p, err := rss_utils.ParseXML(content.String())
-		if err != nil {
-			e.App.Logger().Error("Items Hooks: failed to parse XML file: " + err.Error())
-			return e.Next()
-		}
-
-		monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
-			"user": user,
-		})
-		if err != nil || monthlyUsageRecords == nil {
-			e.App.Logger().Error("Items Hooks: failed to find monthly usage record: " + err.Error())
-			return e.Next()
-		}
-		monthlyUsage := monthlyUsageRecords[0]
-
 		switch itemType {
 		case "url":
-			downloads, err := e.App.FindCollectionByNameOrId(collections.Downloads)
+			downloader.AddJob(downloader.Job{
+				App:        e.App,
+				Record:     itemRecord,
+				Collection: collections.Items,
+			})
+		case "upload":
+			user := itemRecord.GetString("user")
+			podcast, err := e.App.FindRecordById(collections.Podcasts, podcastId)
 			if err != nil {
-				e.App.Logger().Error("Items Hooks: failed to find downloads collection: " + err.Error())
+				e.App.Logger().Error("Items Hooks: failed to find podcast record: " + err.Error())
 				return e.Next()
 			}
 
-			download := core.NewRecord(downloads)
+			fileClient, err := files.NewFileClient(e.App, podcast, "file")
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to create file client: " + err.Error())
+				return e.Next()
+			}
 
-			routine.FireAndForget(func() {
-				ytdlp := ytdlp.New(e.App)
-				if ytdlp == nil {
-					e.App.Logger().Error("Items Hooks: failed to initialize ytdlp")
-					return
-				}
+			content, err := fileClient.GetXMLFile()
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to get XML file: " + err.Error())
+				return e.Next()
+			}
 
-				result, err := ytdlp.GetInfo(url)
-				if err != nil {
-					e.App.Logger().Error("Items Hooks: failed to get video info: " + err.Error())
-					return
-				}
+			p, err := rss_utils.ParseXML(content.String())
+			if err != nil {
+				e.App.Logger().Error("Items Hooks: failed to parse XML file: " + err.Error())
+				return e.Next()
+			}
 
-				itemRecord.Set("title", result.Info.Title)
-				if err := e.App.Save(itemRecord); err != nil {
-					e.App.Logger().Error("Items Hooks: failed to update item record title: " + err.Error())
-					return
-				}
-
-				fileSize := 0
-				if result.Info.Filesize != 0 {
-					fileSize = int(result.Info.Filesize)
-				} else {
-					length := result.Info.Duration
-					fileSize = int(float64(length) * 25000)
-				}
-
-				usageLimit := monthlyUsage.GetInt("limit")
-				currentUsage := monthlyUsage.GetInt("usage")
-
-				if currentUsage > usageLimit || (currentUsage+int(fileSize/2)) > usageLimit {
-					itemRecord.Set("status", "ERROR")
-					itemRecord.Set("error", "Failed to add item to podcast: Monthly usage limit exceeded")
-					if err := e.App.Save(itemRecord); err != nil {
-						e.App.Logger().Error("Items Hooks: failed to update item record status to ERROR: " + err.Error())
-						return
-					}
-					return
-				}
-
-				videoId := result.Info.ID
-				existingDownload, err := e.App.FindFirstRecordByData(collections.Downloads, "video_id", videoId)
-				if err == nil && existingDownload != nil {
-					download = existingDownload
-				} else {
-					audio, path, err := ytdlp.Download(url, download, result)
-					if err != nil {
-						e.App.Logger().Error("Items Hooks: failed to download audio: " + err.Error())
-						return
-					}
-					defer audio.Close()
-
-					if err := e.App.Save(download); err != nil {
-						e.App.Logger().Error("Items Hooks: failed to save download record: " + err.Error())
-						return
-					}
-
-					if err := os.Remove(path); err != nil {
-						e.App.Logger().Error("Items Hooks: failed to remove temp file: " + err.Error())
-						return
-					}
-				}
-
-				itemRecord.Set("download", download.Id)
-				if err := e.App.Save(itemRecord); err != nil {
-					e.App.Logger().Error("Items Hooks: failed to update item record with download ID: " + err.Error())
-					return
-				}
-
-				audioURL := fileClient.GetFileURL(download, "file")
-				title := download.GetString("title")
-				description := download.GetString("description")
-				duration := download.GetFloat("duration")
-				rss_utils.AddItemToPodcast(&p, title, audioURL, description, download.Id, audioURL, int64(duration))
-
-				if err := UpdateXMLFile(e.App, fileClient, p, podcast); err != nil {
-					e.App.Logger().Error("Items Hooks: failed to update XML file: " + err.Error())
-					return
-				}
-
-				itemRecord.Set("status", "SUCCESS")
-				if err := e.App.Save(itemRecord); err != nil {
-					e.App.Logger().Error("Items Hooks: failed to update item record status to SUCCESS: " + err.Error())
-					return
-				}
-
-				downloadSize := download.GetInt("size")
-				monthlyUsage.Set("usage", currentUsage+downloadSize)
-				if err := e.App.Save(monthlyUsage); err != nil {
-					e.App.Logger().Error("Items Hooks: failed to update monthly usage: " + err.Error())
-					return
-				}
+			monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
+				"user": user,
 			})
-		case "upload":
+			if err != nil || monthlyUsageRecords == nil {
+				e.App.Logger().Error("Items Hooks: failed to find monthly usage record: " + err.Error())
+				return e.Next()
+			}
+			monthlyUsage := monthlyUsageRecords[0]
 			currentUploadCount := monthlyUsage.GetInt("uploads")
 
 			upload, err := e.App.FindRecordById(collections.Uploads, itemRecord.GetString("upload"))
@@ -212,7 +113,7 @@ func Init(app *pocketbase.PocketBase) error {
 			rss_utils.AddItemToPodcast(&p, title, audioURL, "No description provided.", upload.Id, audioURL, int64(duration))
 
 			routine.FireAndForget(func() {
-				if err := UpdateXMLFile(e.App, fileClient, p, podcast); err != nil {
+				if err := rss_utils.UpdateXMLFile(e.App, fileClient, p, podcast); err != nil {
 					e.App.Logger().Error("Items Hooks: failed to update XML file: " + err.Error())
 					return
 				}
@@ -265,7 +166,12 @@ func Init(app *pocketbase.PocketBase) error {
 			rss_utils.RemoveItemFromPodcast(&p, uploadId)
 		}
 
-		if err := UpdateXMLFile(e.App, fileClient, p, podcast); err != nil {
+		xml, err := rss_utils.GenerateXML(&p)
+		if err != nil {
+			e.App.Logger().Error("Items Hooks: failed to generate XML: " + err.Error())
+			return e.Next()
+		}
+		if err := fileClient.SetXMLFile(xml); err != nil {
 			e.App.Logger().Error("Items Hooks: failed to update XML file: " + err.Error())
 			return e.Next()
 		}

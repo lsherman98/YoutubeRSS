@@ -65,6 +65,10 @@ func (c *FileClient) GetXMLFile() (*bytes.Buffer, error) {
 	return content, nil
 }
 
+func (c *FileClient) SetXMLFile(xml string) error {
+	return c.fsys.Upload([]byte(xml), c.fileKey)
+}
+
 func (c *FileClient) NewXMLFile(xml, fileName string) (*filesystem.File, error) {
 	file, err := filesystem.NewFileFromBytes([]byte(xml), fileName+".rss")
 	if err != nil {

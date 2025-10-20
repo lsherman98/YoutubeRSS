@@ -3,9 +3,11 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/lsherman98/yt-rss/pocketbase/downloader"
 	_ "github.com/lsherman98/yt-rss/pocketbase/migrations"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/api_hooks"
 	"github.com/lsherman98/yt-rss/pocketbase/pb_hooks/api_key_hooks"
@@ -77,6 +79,18 @@ func main() {
 	}
 
 	if err := mailer_hooks.Init(app); err != nil {
+		log.Fatal(err)
+	}
+
+	maxWorkers, err := strconv.Atoi(os.Getenv("DOWNLOAD_MAX_WORKERS"))
+	if err != nil || maxWorkers <= 0 {
+		maxWorkers = 2
+	}
+	queueSize, err := strconv.Atoi(os.Getenv("DOWNLOAD_QUEUE_SIZE"))
+	if err != nil || queueSize <= 0 {
+		queueSize = 100
+	}
+	if err := downloader.Init(app, maxWorkers, queueSize); err != nil {
 		log.Fatal(err)
 	}
 
