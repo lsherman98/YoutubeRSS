@@ -1,8 +1,11 @@
 package downloader
 
 import (
+	"fmt"
 	"os"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/lsherman98/yt-rss/pocketbase/files"
 	"github.com/lsherman98/yt-rss/pocketbase/rss_utils"
@@ -11,43 +14,136 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/routine"
 )
 
-type Job struct {
-	App        core.App
-	Record     *core.Record
-	Collection string
-}
-
-var jobQueue chan Job
-
 func Init(app *pocketbase.PocketBase, maxWorkers int, queueSize int) error {
-	jobQueue = make(chan Job, queueSize)
-	for i := 1; i <= maxWorkers; i++ {
-		go worker(i, app)
-	}
-	app.Logger().Info("Downloader initialized", "max_workers", maxWorkers, "queue_size", queueSize)
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		resetHangingJobs(app)
+		return se.Next()
+	})
+
+	routine.FireAndForget(func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			processQueue(app, maxWorkers)
+		}
+	})
+
+	app.Logger().Info("Downloader initialized", "max_workers", maxWorkers)
 	return nil
 }
 
-func AddJob(job Job) {
-	jobQueue <- job
+func AddJob(app core.App, record *core.Record, collection string) error {
+	queueCollection, err := app.FindCollectionByNameOrId(collections.Queue)
+	if err != nil {
+		return err
+	}
+
+	queueRecord := core.NewRecord(queueCollection)
+	queueRecord.Set("record_id", record.Id)
+	queueRecord.Set("collection", collection)
+	queueRecord.Set("status", "PENDING")
+
+	return app.Save(queueRecord)
 }
 
-func worker(id int, app core.App) {
-	for job := range jobQueue {
-		app.Logger().Info("Worker started job", "worker_id", id, "collection", job.Collection, "record_id", job.Record.Id)
-		switch job.Collection {
-		case collections.Jobs:
-			processJob(app, job.Record)
-		case collections.Items:
-			processItem(app, job.Record)
+func resetHangingJobs(app *pocketbase.PocketBase) {
+	hangingJobs, err := app.FindRecordsByFilter(collections.Queue, "status = 'PROCESSING'", "", 0, 0)
+	if err != nil {
+		app.Logger().Error("Failed to query for hanging jobs", "error", err)
+		return
+	}
+
+	for _, job := range hangingJobs {
+		job.Set("status", "PENDING")
+		job.Set("worker_id", nil)
+		if err := app.Save(job); err != nil {
+			app.Logger().Error("Failed to reset hanging job", "job_id", job.Id, "error", err)
 		}
-		app.Logger().Info("Worker finished job", "worker_id", id, "collection", job.Collection, "record_id", job.Record.Id)
+	}
+
+	if len(hangingJobs) > 0 {
+		app.Logger().Info("Reset hanging jobs", "count", len(hangingJobs))
 	}
 }
 
-func processJob(app core.App, job *core.Record) {
+func processQueue(app *pocketbase.PocketBase, maxWorkers int) {
+	processingCount, err := app.CountRecords(collections.Queue, dbx.HashExp{"status": "PROCESSING"})
+	if err != nil {
+		app.Logger().Error("Failed to get processing job count", "error", err)
+		return
+	}
+
+	if processingCount >= int64(maxWorkers) {
+		return
+	}
+
+	availableWorkers := maxWorkers - int(processingCount)
+
+	jobsToProcess, err := app.FindRecordsByFilter(
+		collections.Queue,
+		"status = 'PENDING'",
+		"+created",
+		availableWorkers,
+		0,
+	)
+	if err != nil {
+		app.Logger().Error("Failed to fetch jobs from queue", "error", err)
+		return
+	}
+
+	for _, queueRecord := range jobsToProcess {
+		routine.FireAndForget(func() {
+			workerId := uuid.New().String()
+			err := app.RunInTransaction(func(txApp core.App) error {
+				freshQr, err := txApp.FindRecordById(collections.Queue, queueRecord.Id)
+				if err != nil {
+					return err
+				}
+
+				if freshQr.GetString("status") != "PENDING" {
+					return fmt.Errorf("job already taken")
+				}
+
+				freshQr.Set("status", "PROCESSING")
+				freshQr.Set("worker_id", workerId)
+				return txApp.Save(freshQr)
+			})
+
+			if err != nil {
+				return
+			}
+
+			recordId := queueRecord.GetString("record_id")
+			collectionName := queueRecord.GetString("collection")
+
+			record, err := app.FindRecordById(collectionName, recordId)
+			if err != nil {
+				app.Logger().Error("Failed to find record for job", "record_id", recordId, "collection", collectionName, "error", err)
+				if err := app.Delete(queueRecord); err != nil {
+					app.Logger().Error("Failed to delete job from queue", "job_id", queueRecord.Id, "error", err)
+				}
+				return
+			}
+
+			switch collectionName {
+			case collections.Jobs:
+				processJob(app, record)
+			case collections.Items:
+				processItem(app, record)
+			}
+
+			if err := app.Delete(queueRecord); err != nil {
+				app.Logger().Error("Failed to delete job from queue", "job_id", queueRecord.Id, "error", err)
+			}
+		})
+	}
+}
+
+func processJob(app *pocketbase.PocketBase, job *core.Record) {
 	url := job.GetString("url")
 	user := job.GetString("user")
 
@@ -59,8 +155,8 @@ func processJob(app core.App, job *core.Record) {
 	download := core.NewRecord(downloads)
 
 	monthlyUsageRecords, err := app.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{"user": user})
-	if err != nil || monthlyUsageRecords == nil {
-		app.Logger().Error("Downloader: failed to find monthly usage record", "error", err)
+	if err != nil || len(monthlyUsageRecords) == 0 {
+		app.Logger().Error("Downloader: failed to find monthly usage record", "error", err, "user", user)
 		return
 	}
 	monthlyUsage := monthlyUsageRecords[0]
@@ -166,7 +262,7 @@ func processJob(app core.App, job *core.Record) {
 	}
 }
 
-func processItem(app core.App, itemRecord *core.Record) {
+func processItem(app *pocketbase.PocketBase, itemRecord *core.Record) {
 	url := itemRecord.GetString("url")
 	podcastId := itemRecord.GetString("podcast")
 	user := itemRecord.GetString("user")
@@ -196,7 +292,7 @@ func processItem(app core.App, itemRecord *core.Record) {
 	}
 
 	monthlyUsageRecords, err := app.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{"user": user})
-	if err != nil || monthlyUsageRecords == nil {
+	if err != nil || len(monthlyUsageRecords) == 0 {
 		app.Logger().Error("Downloader: failed to find monthly usage record", "error", err)
 		return
 	}

@@ -56,11 +56,7 @@ func Init(app *pocketbase.PocketBase) error {
 			webhookClient.Send("CREATED")
 		}
 
-		downloader.AddJob(downloader.Job{
-			App:        e.App,
-			Record:     job,
-			Collection: collections.Jobs,
-		})
+		downloader.AddJob(e.App, job, collections.Jobs)
 
 		return e.Next()
 	})

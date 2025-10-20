@@ -53,11 +53,7 @@ func Init(app *pocketbase.PocketBase) error {
 
 		switch itemType {
 		case "url":
-			downloader.AddJob(downloader.Job{
-				App:        e.App,
-				Record:     itemRecord,
-				Collection: collections.Items,
-			})
+			downloader.AddJob(e.App, itemRecord, collections.Items)
 		case "upload":
 			user := itemRecord.GetString("user")
 			podcast, err := e.App.FindRecordById(collections.Podcasts, podcastId)
