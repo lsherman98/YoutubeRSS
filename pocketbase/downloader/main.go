@@ -46,6 +46,7 @@ func AddJob(app core.App, record *core.Record, collection string) error {
 	queueRecord.Set("record_id", record.Id)
 	queueRecord.Set("collection", collection)
 	queueRecord.Set("status", "PENDING")
+	queueRecord.Set("max_retries", 5)
 
 	return app.Save(queueRecord)
 }
@@ -96,10 +97,11 @@ func processQueue(app *pocketbase.PocketBase, maxWorkers int) {
 	}
 
 	for _, queueRecord := range jobsToProcess {
+		queueRecordId := queueRecord.Id
 		routine.FireAndForget(func() {
 			workerId := uuid.New().String()
 			err := app.RunInTransaction(func(txApp core.App) error {
-				freshQr, err := txApp.FindRecordById(collections.Queue, queueRecord.Id)
+				freshQr, err := txApp.FindRecordById(collections.Queue, queueRecordId)
 				if err != nil {
 					return err
 				}
@@ -110,54 +112,116 @@ func processQueue(app *pocketbase.PocketBase, maxWorkers int) {
 
 				freshQr.Set("status", "PROCESSING")
 				freshQr.Set("worker_id", workerId)
-				return txApp.Save(freshQr)
+				if err := txApp.Save(freshQr); err != nil {
+					app.Logger().Error("Failed to claim job", "job_id", queueRecordId, "error", err)
+					return err
+				}
+				return nil
 			})
 
 			if err != nil {
 				return
 			}
 
-			recordId := queueRecord.GetString("record_id")
-			collectionName := queueRecord.GetString("collection")
+			freshQueueRecord, err := app.FindRecordById(collections.Queue, queueRecordId)
+			if err != nil {
+				app.Logger().Error("Failed to refetch queue record", "queue_id", queueRecordId, "error", err)
+				return
+			}
+
+			app.Logger().Info("Processing job from queue",
+				"queue_id", freshQueueRecord.Id,
+				"worker_id", freshQueueRecord.GetString("worker_id"),
+				"retry_count", freshQueueRecord.GetInt("retry_count"))
+
+			recordId := freshQueueRecord.GetString("record_id")
+			collectionName := freshQueueRecord.GetString("collection")
 
 			record, err := app.FindRecordById(collectionName, recordId)
 			if err != nil {
 				app.Logger().Error("Failed to find record for job", "record_id", recordId, "collection", collectionName, "error", err)
-				if err := app.Delete(queueRecord); err != nil {
-					app.Logger().Error("Failed to delete job from queue", "job_id", queueRecord.Id, "error", err)
+				if err := app.Delete(freshQueueRecord); err != nil {
+					app.Logger().Error("Failed to delete job from queue", "job_id", queueRecordId, "error", err)
 				}
 				return
 			}
 
+			var jobErr error
 			switch collectionName {
 			case collections.Jobs:
-				processJob(app, record)
+				jobErr = processJob(app, record, freshQueueRecord)
 			case collections.Items:
-				processItem(app, record)
+				jobErr = processItem(app, record, freshQueueRecord)
 			}
 
-			if err := app.Delete(queueRecord); err != nil {
-				app.Logger().Error("Failed to delete job from queue", "job_id", queueRecord.Id, "error", err)
+			if jobErr != nil {
+				handleJobFailure(app, freshQueueRecord, jobErr)
+				return
 			}
+
+			freshQueueRecord.Set("status", "COMPLETED")
+			if err := app.Save(freshQueueRecord); err != nil {
+				app.Logger().Error("Failed to update job status to COMPLETED", "job_id", queueRecordId, "error", err)
+			}
+			// if err := app.Delete(freshQueueRecord); err != nil {
+			// 	app.Logger().Error("Failed to delete job from queue", "job_id", queueRecordId, "error", err)
+			// }
 		})
 	}
 }
 
-func processJob(app *pocketbase.PocketBase, job *core.Record) {
+func handleJobFailure(app *pocketbase.PocketBase, queueRecord *core.Record, jobErr error) {
+	retryCount := queueRecord.GetInt("retry_count")
+	maxRetries := queueRecord.GetInt("max_retries")
+
+	if maxRetries == 0 {
+		maxRetries = 3
+	}
+
+	retryCount++
+	queueRecord.Set("retry_count", retryCount)
+	queueRecord.Set("last_error", jobErr.Error())
+
+	if retryCount >= maxRetries {
+		app.Logger().Error("Job failed after max retries",
+			"queue_id", queueRecord.Id,
+			"retry_count", retryCount,
+			"error", jobErr.Error())
+
+		if err := app.Delete(queueRecord); err != nil {
+			app.Logger().Error("Failed to delete failed job from queue", "job_id", queueRecord.Id, "error", err)
+		}
+	} else {
+		app.Logger().Info("Job failed, will retry",
+			"queue_id", queueRecord.Id,
+			"retry_count", retryCount,
+			"max_retries", maxRetries,
+			"error", jobErr.Error())
+
+		queueRecord.Set("status", "PENDING")
+		queueRecord.Set("worker_id", nil)
+
+		if err := app.Save(queueRecord); err != nil {
+			app.Logger().Error("Failed to save queue record for retry", "job_id", queueRecord.Id, "error", err)
+		}
+	}
+}
+
+func processJob(app *pocketbase.PocketBase, job *core.Record, queueRecord *core.Record) error {
 	url := job.GetString("url")
 	user := job.GetString("user")
 
 	downloads, err := app.FindCollectionByNameOrId(collections.Downloads)
 	if err != nil {
 		app.Logger().Error("Downloader: failed to find downloads collection", "error", err)
-		return
+		return err
 	}
 	download := core.NewRecord(downloads)
 
 	monthlyUsageRecords, err := app.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{"user": user})
 	if err != nil || len(monthlyUsageRecords) == 0 {
 		app.Logger().Error("Downloader: failed to find monthly usage record", "error", err, "user", user)
-		return
+		return fmt.Errorf("failed to find monthly usage record: %w", err)
 	}
 	monthlyUsage := monthlyUsageRecords[0]
 
@@ -166,7 +230,7 @@ func processJob(app *pocketbase.PocketBase, job *core.Record) {
 	job.Set("status", "STARTED")
 	if err := app.Save(job); err != nil {
 		app.Logger().Error("Downloader: failed to update job status to STARTED", "error", err)
-		return
+		return err
 	}
 	if webhookClient != nil {
 		webhookClient.Send("STARTED")
@@ -175,13 +239,32 @@ func processJob(app *pocketbase.PocketBase, job *core.Record) {
 	ytdlpClient := ytdlp.New(app)
 	if ytdlpClient == nil {
 		app.Logger().Error("Downloader: failed to initialize ytdlp")
-		return
+		return fmt.Errorf("failed to initialize ytdlp client")
+	}
+
+	retryCount := queueRecord.GetInt("retry_count")
+	if retryCount >= 2 && ytdlpClient.SwitchToBackupProxy() {
+		app.Logger().Info("Downloader: switched to backup proxy", "retry_count", retryCount)
+	}
+
+	currentProxy := ytdlpClient.GetCurrentProxy()
+	queueRecord.Set("last_proxy", currentProxy)
+	if err := app.Save(queueRecord); err != nil {
+		app.Logger().Warn("Downloader: failed to update queue record with proxy info", "error", err)
 	}
 
 	result, err := ytdlpClient.GetInfo(url)
 	if err != nil {
 		app.Logger().Error("Downloader: failed to get video info", "error", err)
-		return
+		job.Set("status", "ERROR")
+		job.Set("error", err.Error())
+		if saveErr := app.Save(job); saveErr != nil {
+			app.Logger().Error("Downloader: failed to update job status to ERROR", "error", saveErr)
+		}
+		if webhookClient != nil {
+			webhookClient.Send("ERROR")
+		}
+		return err
 	}
 
 	job.Set("title", result.Info.Title)
@@ -206,13 +289,13 @@ func processJob(app *pocketbase.PocketBase, job *core.Record) {
 		if webhookClient != nil {
 			webhookClient.Send("ERROR")
 		}
-		return
+		return nil
 	}
 
 	job.Set("status", "PROCESSING")
 	if err := app.Save(job); err != nil {
 		app.Logger().Error("Downloader: failed to update job status to PROCESSING", "error", err)
-		return
+		return err
 	}
 
 	videoId := result.Info.ID
@@ -231,13 +314,13 @@ func processJob(app *pocketbase.PocketBase, job *core.Record) {
 			if webhookClient != nil {
 				webhookClient.Send("ERROR")
 			}
-			return
+			return err
 		}
 		defer audio.Close()
 
 		if err := app.Save(download); err != nil {
 			app.Logger().Error("Downloader: failed to save download record", "error", err)
-			return
+			return err
 		}
 
 		if err := os.Remove(path); err != nil {
@@ -249,7 +332,7 @@ func processJob(app *pocketbase.PocketBase, job *core.Record) {
 	job.Set("status", "SUCCESS")
 	if err := app.Save(job); err != nil {
 		app.Logger().Error("Downloader: failed to update job status to SUCCESS", "error", err)
-		return
+		return err
 	}
 
 	if webhookClient != nil {
@@ -260,9 +343,11 @@ func processJob(app *pocketbase.PocketBase, job *core.Record) {
 	if err := app.Save(monthlyUsage); err != nil {
 		app.Logger().Error("Downloader: failed to update monthly usage", "error", err)
 	}
+
+	return nil
 }
 
-func processItem(app *pocketbase.PocketBase, itemRecord *core.Record) {
+func processItem(app *pocketbase.PocketBase, itemRecord *core.Record, queueRecord *core.Record) error {
 	url := itemRecord.GetString("url")
 	podcastId := itemRecord.GetString("podcast")
 	user := itemRecord.GetString("user")
@@ -270,57 +355,68 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record) {
 	podcast, err := app.FindRecordById(collections.Podcasts, podcastId)
 	if err != nil {
 		app.Logger().Error("Downloader: failed to find podcast record", "error", err)
-		return
+		return err
 	}
 
 	fileClient, err := files.NewFileClient(app, podcast, "file")
 	if err != nil {
 		app.Logger().Error("Downloader: failed to create file client", "error", err)
-		return
+		return err
 	}
 
 	content, err := fileClient.GetXMLFile()
 	if err != nil {
 		app.Logger().Error("Downloader: failed to get XML file", "error", err)
-		return
+		return err
 	}
 
 	p, err := rss_utils.ParseXML(content.String())
 	if err != nil {
 		app.Logger().Error("Downloader: failed to parse XML file", "error", err)
-		return
+		return err
 	}
 
 	monthlyUsageRecords, err := app.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{"user": user})
 	if err != nil || len(monthlyUsageRecords) == 0 {
 		app.Logger().Error("Downloader: failed to find monthly usage record", "error", err)
-		return
+		return fmt.Errorf("failed to find monthly usage record: %w", err)
 	}
 	monthlyUsage := monthlyUsageRecords[0]
 
 	downloads, err := app.FindCollectionByNameOrId(collections.Downloads)
 	if err != nil {
 		app.Logger().Error("Downloader: failed to find downloads collection", "error", err)
-		return
+		return err
 	}
 	download := core.NewRecord(downloads)
 
 	ytdlpClient := ytdlp.New(app)
 	if ytdlpClient == nil {
 		app.Logger().Error("Downloader: failed to initialize ytdlp")
-		return
+		return fmt.Errorf("failed to initialize ytdlp client")
+	}
+
+	retryCount := queueRecord.GetInt("retry_count")
+	if retryCount >= 2 && ytdlpClient.SwitchToBackupProxy() {
+		app.Logger().Info("Downloader: switched to backup proxy", "retry_count", retryCount)
+	}
+
+	currentProxy := ytdlpClient.GetCurrentProxy()
+	queueRecord.Set("last_proxy", currentProxy)
+	if err := app.Save(queueRecord); err != nil {
+		app.Logger().Warn("Downloader: failed to update queue record with proxy info", "error", err)
 	}
 
 	result, err := ytdlpClient.GetInfo(url)
 	if err != nil {
 		app.Logger().Error("Downloader: failed to get video info", "error", err)
-		return
+		return err
 	}
 
 	itemRecord.Set("title", result.Info.Title)
 	if err := app.Save(itemRecord); err != nil {
 		app.Logger().Error("Downloader: failed to update item record title", "error", err)
-		return
+		return err
 	}
 
 	fileSize := 0
@@ -340,7 +436,7 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record) {
 		if err := app.Save(itemRecord); err != nil {
 			app.Logger().Error("Downloader: failed to update item record status to ERROR", "error", err)
 		}
-		return
+		return nil
 	}
 
 	videoId := result.Info.ID
@@ -351,13 +447,13 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record) {
 		audio, path, err := ytdlpClient.Download(url, download, result)
 		if err != nil {
 			app.Logger().Error("Downloader: failed to download audio", "error", err)
-			return
+			return err
 		}
 		defer audio.Close()
 
 		if err := app.Save(download); err != nil {
 			app.Logger().Error("Downloader: failed to save download record", "error", err)
-			return
+			return err
 		}
 
 		if err := os.Remove(path); err != nil {
@@ -368,7 +464,7 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record) {
 	itemRecord.Set("download", download.Id)
 	if err := app.Save(itemRecord); err != nil {
 		app.Logger().Error("Downloader: failed to update item record with download ID", "error", err)
-		return
+		return err
 	}
 
 	audioURL := fileClient.GetFileURL(download, "file")
@@ -384,13 +480,13 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record) {
 
 	if err := rss_utils.UpdateXMLFile(app, fileClient, p, podcast); err != nil {
 		app.Logger().Error("Downloader: failed to update XML file", "error", err)
-		return
+		return err
 	}
 
 	itemRecord.Set("status", "SUCCESS")
 	if err := app.Save(itemRecord); err != nil {
 		app.Logger().Error("Downloader: failed to update item record status to SUCCESS", "error", err)
-		return
+		return err
 	}
 
 	downloadSize := download.GetInt("size")
@@ -398,4 +494,6 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record) {
 	if err := app.Save(monthlyUsage); err != nil {
 		app.Logger().Error("Downloader: failed to update monthly usage", "error", err)
 	}
+
+	return nil
 }

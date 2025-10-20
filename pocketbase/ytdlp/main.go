@@ -14,10 +14,10 @@ import (
 )
 
 type Client struct {
-	App       core.App
-	ProxyHost string
-	ProxyAuth string
-	ProxyURL  string
+	App             core.App
+	ProxyURL        string
+	BackupProxyURL  string
+	CurrentProxyURL string
 }
 
 func New(app core.App) *Client {
@@ -29,17 +29,16 @@ func New(app core.App) *Client {
 	}
 
 	proxy := os.Getenv("PROXY")
+	backupProxy := os.Getenv("BACKUP_PROXY")
+	
+	var primaryURL string
+	var backupURL string
+
 	switch proxy {
 	case "ngrok":
-		return &Client{
-			App:      app,
-			ProxyURL: os.Getenv("NGROK_PROXY"),
-		}
+		primaryURL = os.Getenv("NGROK_PROXY")
 	case "oxylabs":
-		return &Client{
-			App:      app,
-			ProxyURL: os.Getenv("OXY_LABS_PROXY_URL"),
-		}
+		primaryURL = os.Getenv("OXY_LABS_PROXY_URL")
 	case "iproyal":
 		host := os.Getenv("IP_ROYAL_PROXY_HOST")
 		auth := os.Getenv("IP_ROYAL_PROXY_AUTH")
@@ -48,32 +47,51 @@ func New(app core.App) *Client {
 			app.Logger().Error("YTDLP: failed to parse proxy URL", "error", err)
 			return nil
 		}
-
-		return &Client{
-			App:       app,
-			ProxyHost: host,
-			ProxyAuth: auth,
-			ProxyURL:  url.String(),
-		}
+		primaryURL = url.String()
 	case "evomi":
-		return &Client{
-			App:      app,
-			ProxyURL: os.Getenv("EVOMI_PROXY_URL"),
-		}
+		primaryURL = os.Getenv("EVOMI_PROXY_URL")
 	}
 
-	return &Client{}
+	if backupProxy != "" {
+		backupURL = backupProxy
+	}
+
+	return &Client{
+		App:             app,
+		ProxyURL:        primaryURL,
+		BackupProxyURL:  backupURL,
+		CurrentProxyURL: primaryURL,
+	}
+}
+
+func (c *Client) SwitchToBackupProxy() bool {
+	if c.BackupProxyURL == "" {
+		c.App.Logger().Warn("YTDLP: no backup proxy configured")
+		return false
+	}
+	
+	c.App.Logger().Info("YTDLP: switching to backup proxy", "backup_url", c.BackupProxyURL)
+	c.CurrentProxyURL = c.BackupProxyURL
+	return true
+}
+
+func (c *Client) ResetToPrimaryProxy() {
+	c.CurrentProxyURL = c.ProxyURL
+}
+
+func (c *Client) GetCurrentProxy() string {
+	return c.CurrentProxyURL
 }
 
 func (c *Client) GetInfo(url string) (*goutubedl.Result, error) {
 	opts := goutubedl.Options{}
 	if os.Getenv("DEV") != "true" {
-		opts.ProxyUrl = c.ProxyURL
+		opts.ProxyUrl = c.CurrentProxyURL
 	}
 
 	result, err := goutubedl.New(context.Background(), url, opts)
 	if err != nil {
-		c.App.Logger().Error("YTDLP: failed to get info", "error", err)
+		c.App.Logger().Error("YTDLP: failed to get info", "error", err, "proxy", c.CurrentProxyURL)
 		return nil, err
 	}
 
