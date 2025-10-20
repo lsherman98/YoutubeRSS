@@ -279,6 +279,11 @@ func processItem(app core.App, itemRecord *core.Record) {
 	title := download.GetString("title")
 	description := download.GetString("description")
 	duration := download.GetFloat("duration")
+
+	if description == "" {
+		description = "No description available."
+	}
+
 	rss_utils.AddItemToPodcast(&p, title, audioURL, description, download.Id, audioURL, int64(duration))
 
 	if err := rss_utils.UpdateXMLFile(app, fileClient, p, podcast); err != nil {
