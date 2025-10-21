@@ -287,7 +287,7 @@ function LandingPage() {
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">Usage limits that work for you</p>
                 <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">{isYearly ? "$6.80" : "$8"}</div>
+                  <div className="text-3xl font-bold">{isYearly ? "$6.83" : "$8"}</div>
                   <div className="text-sm text-gray-500">{isYearly ? "per month" : "per month"}</div>
                   <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $82/year" : ""}</div>
                 </div>
@@ -324,7 +324,7 @@ function LandingPage() {
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">For heavy users and API access</p>
                 <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">{isYearly ? "$13.60" : "$16"}</div>
+                  <div className="text-3xl font-bold">{isYearly ? "$13.67" : "$16"}</div>
                   <div className="text-sm text-gray-500">{isYearly ? "per month" : "per month"}</div>
                   <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $164/year" : ""}</div>
                 </div>
@@ -358,7 +358,7 @@ function LandingPage() {
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">For large workloads</p>
                 <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">{isYearly ? "$27.20" : "$32"}</div>
+                  <div className="text-3xl font-bold">{isYearly ? "$27.17" : "$32"}</div>
                   <div className="text-sm text-gray-500">{isYearly ? "per month" : "per month"}</div>
                   <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $326/year" : ""}</div>
                 </div>

@@ -111,7 +111,7 @@ function SubscriptionPage() {
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
               <div className="mb-4 min-h-18">
-                <div className="text-3xl font-bold">{isYearly ? "$6.80" : "$8"}</div>
+                <div className="text-3xl font-bold">{isYearly ? "$6.83" : "$8"}</div>
                 <div className="text-sm text-muted-foreground">{isYearly ? "per month" : "per month"}</div>
                 {isYearly && <div className="text-xs text-muted-foreground">Billed $82/year</div>}
               </div>
@@ -166,7 +166,7 @@ function SubscriptionPage() {
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
               <div className="mb-4 min-h-18">
-                <div className="text-3xl font-bold">{isYearly ? "$13.60" : "$16"}</div>
+                <div className="text-3xl font-bold">{isYearly ? "$13.67" : "$16"}</div>
                 <div className="text-sm text-muted-foreground">{isYearly ? "per month" : "per month"}</div>
                 {isYearly && <div className="text-xs text-muted-foreground">Billed $164/year</div>}
               </div>
@@ -218,7 +218,7 @@ function SubscriptionPage() {
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
               <div className="mb-4 min-h-18">
-                <div className="text-3xl font-bold">{isYearly ? "$27.20" : "$32"}</div>
+                <div className="text-3xl font-bold">{isYearly ? "$27.17" : "$32"}</div>
                 <div className="text-sm text-muted-foreground">{isYearly ? "per month" : "per month"}</div>
                 {isYearly && <div className="text-xs text-muted-foreground">Billed $326/year</div>}
               </div>

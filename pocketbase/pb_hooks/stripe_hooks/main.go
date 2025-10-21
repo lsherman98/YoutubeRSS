@@ -175,10 +175,11 @@ func Init(app *pocketbase.PocketBase) error {
 						Quantity: stripe.Int64(1),
 					},
 				},
-				Mode:       stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-				SuccessURL: stripe.String(domain + "/podcasts"),
-				CancelURL:  stripe.String(domain + "/subscriptions"),
-				Customer:   stripe.String(customerRecord.GetString("customer_id")),
+				Mode:                stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+				SuccessURL:          stripe.String(domain + "/podcasts"),
+				CancelURL:           stripe.String(domain + "/subscriptions"),
+				Customer:            stripe.String(customerRecord.GetString("customer_id")),
+				AllowPromotionCodes: stripe.Bool(true),
 			}
 
 			s, err := checkout.New(params)
