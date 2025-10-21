@@ -38,7 +38,7 @@ export function useGetJobs() {
         queryFn: () => getJobs(),
         placeholderData: keepPreviousData,
         refetchInterval: (query) => {
-            if (query.state.data && query.state.data.some((job: JobsResponse) => job.status === JobsStatusOptions.PROCESSING || job.status === JobsStatusOptions.STARTED)) {
+            if (query.state.data && query.state.data.some((job: JobsResponse) => [JobsStatusOptions.CREATED, JobsStatusOptions.STARTED, JobsStatusOptions.PROCESSING].includes(job.status))) {
                 return 3000;
             }
             return false;

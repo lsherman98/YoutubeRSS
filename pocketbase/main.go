@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -85,15 +84,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	maxWorkers, err := strconv.Atoi(os.Getenv("DOWNLOAD_MAX_WORKERS"))
-	if err != nil || maxWorkers <= 0 {
-		maxWorkers = 2
-	}
-	queueSize, err := strconv.Atoi(os.Getenv("DOWNLOAD_QUEUE_SIZE"))
-	if err != nil || queueSize <= 0 {
-		queueSize = 100
-	}
-	if err := downloader.Init(app, maxWorkers, queueSize); err != nil {
+	if err := downloader.Init(app); err != nil {
 		log.Fatal(err)
 	}
 

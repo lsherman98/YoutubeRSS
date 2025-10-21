@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, AlertCircle, CheckCircle, Clock, Loader2 } from "lucide-react";
+import { Download, AlertCircle, CheckCircle, Loader2, Grip } from "lucide-react";
 import type { JobsResponse } from "@/lib/pocketbase-types";
 import { JobsStatusOptions } from "@/lib/pocketbase-types";
 import type { ExpandJobs } from "@/lib/api/api";
@@ -25,35 +25,38 @@ export function JobsTable({ jobs }: JobsTableProps) {
     switch (status) {
       case JobsStatusOptions.CREATED:
         return (
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Created
+          <Badge
+            variant="outline"
+            className="flex items-center gap-1 text-amber-600 border-amber-600 animate-pulse min-w-26"
+          >
+            <Grip className="h-3 w-3 " />
+            Waiting
           </Badge>
         );
       case JobsStatusOptions.STARTED:
         return (
-          <Badge variant="outline" className="flex items-center gap-1 text-purple-600 border-purple-600">
+          <Badge variant="outline" className="flex items-center gap-1.5 text-purple-600 border-purple-600 min-w-26">
             <Loader2 className="h-3 w-3 animate-spin" />
             Started
           </Badge>
         );
       case JobsStatusOptions.PROCESSING:
         return (
-          <Badge variant="outline" className="flex items-center gap-1 text-blue-600 border-blue-600">
+          <Badge variant="outline" className="flex items-center gap-1.5 text-blue-600 border-blue-600 min-w-26">
             <Loader2 className="h-3 w-3 animate-spin" />
             Processing
           </Badge>
         );
       case JobsStatusOptions.SUCCESS:
         return (
-          <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-600">
+          <Badge variant="outline" className="flex items-center gap-1.5 text-green-600 border-green-600 min-w-26">
             <CheckCircle className="h-3 w-3" />
             Success
           </Badge>
         );
       case JobsStatusOptions.ERROR:
         return (
-          <Badge variant="outline" className="flex items-center gap-1 text-red-600 border-red-600">
+          <Badge variant="outline" className="flex items-center gap-1.5 text-red-600 border-red-600 min-w-26">
             <AlertCircle className="h-3 w-3" />
             Error
           </Badge>
