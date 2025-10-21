@@ -33,51 +33,57 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900">
-      <header className="bg-white dark:bg-gray-900 py-4 border-b dark:border-gray-800">
+      <header className="bg-white dark:bg-gray-900 py-4 border-b dark:border-gray-800 sticky top-0 z-50">
         <div className="container mx-auto px-4 flex items-center justify-between">
-          <Link to="/landing" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <Link to="/landing" className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">
             YouTube RSS
           </Link>
-          <div className="space-x-4">
+          <div className="flex gap-2 md:gap-4">
             {isLoggedIn ? (
               <Link to="/podcasts">
-                <Button variant="outline">Dashboard</Button>
+                <Button variant="outline" size="sm" className="md:h-10">
+                  Dashboard
+                </Button>
               </Link>
             ) : (
               <Link to="/signin">
-                <Button variant="outline">Log In</Button>
+                <Button variant="outline" size="sm" className="md:h-10">
+                  Log In
+                </Button>
               </Link>
             )}
-            <Button variant="secondary">Documentation</Button>
+            <Button variant="secondary" size="sm" className="md:h-10">
+              Documentation
+            </Button>
           </div>
         </div>
       </header>
-      <section className="container mx-auto px-4 pt-20 pb-16">
+      <section className="container mx-auto px-4 pt-12 md:pt-20 pb-12 md:pb-16">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center p-3 mb-6 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950">
-            <Rss className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <div className="inline-flex items-center justify-center p-2 md:p-3 mb-4 md:mb-6 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950">
+            <Rss className="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-400" />
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
             Turn YouTube Videos into Your Personal Podcast
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+          <p className="text-base md:text-xl text-gray-600 dark:text-gray-300 mb-6 md:mb-8 max-w-2xl mx-auto px-4">
             Convert any YouTube video into podcast episodes. Listen anywhere with your favorite podcast app.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/signin">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
+            <Link to="/signin" className="w-full sm:w-auto">
               <Button
                 size="lg"
-                className="text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8 py-5 md:py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 Get Started
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </Link>
           </div>
         </div>
       </section>
-      <section className="container mx-auto px-4 py-16">
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <section className="container mx-auto px-4 py-12 md:py-16">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
           <FeatureCard
             icon={<Youtube className="h-8 w-8" />}
             title="YouTube to Podcast"
@@ -110,9 +116,9 @@ function LandingPage() {
           />
         </div>
       </section>
-      <section className="container mx-auto px-4 py-16 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-3xl my-16">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">How It Works</h2>
-        <div className="max-w-4xl mx-auto space-y-8">
+      <section className="container mx-auto px-4 py-12 md:py-16 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-2xl md:rounded-3xl my-12 md:my-16">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-8 md:mb-12 px-4">How It Works</h2>
+        <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
           <StepCard
             number={1}
             title="Create Your Podcast"
@@ -135,23 +141,25 @@ function LandingPage() {
           />
         </div>
       </section>
-      <section className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Built for Developers</h2>
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+      <section className="container mx-auto px-4 py-12 md:py-16">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-8 md:mb-12 px-4">
+          Built for Developers
+        </h2>
+        <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
           <Card className="border-2 flex flex-col">
-            <CardContent className="p-8 flex-1 flex flex-col">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="p-3 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950">
-                  <Code2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <CardContent className="p-6 md:p-8 flex-1 flex flex-col">
+              <div className="flex items-start gap-3 md:gap-4 mb-4">
+                <div className="p-2 md:p-3 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 flex-shrink-0">
+                  <Code2 className="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold mb-2">API</h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  <h3 className="text-xl md:text-2xl font-semibold mb-2">API</h3>
+                  <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-4">
                     Integrate YouTube to audio conversion directly into your applications with our powerful API.
                   </p>
                 </div>
               </div>
-              <ul className="mt-4 space-y-2 text-sm flex-1">
+              <ul className="mt-4 space-y-2 text-xs md:text-sm flex-1">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                   <span>Simple endpoints designed to get you started quickly</span>
@@ -173,26 +181,26 @@ function LandingPage() {
                   <span>Webhook notifications for asynchronous workflows</span>
                 </li>
               </ul>
-              <Button variant="outline" className="mt-6 w-full">
+              <Button variant="outline" className="mt-6 w-full text-sm md:text-base">
                 API Docs
                 <ExternalLink className="ml-2 h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
           <Card className="border-2 flex flex-col">
-            <CardContent className="p-8 flex-1 flex flex-col">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="p-3 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950">
-                  <Terminal className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <CardContent className="p-6 md:p-8 flex-1 flex flex-col">
+              <div className="flex items-start gap-3 md:gap-4 mb-4">
+                <div className="p-2 md:p-3 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 flex-shrink-0">
+                  <Terminal className="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold mb-2">CLI</h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  <h3 className="text-xl md:text-2xl font-semibold mb-2">CLI</h3>
+                  <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-4">
                     Use the command line to easily add YouTube videos to your podcast feeds.
                   </p>
                 </div>
               </div>
-              <ul className="mt-4 space-y-2 text-sm flex-1">
+              <ul className="mt-4 space-y-2 text-xs md:text-sm flex-1">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                   <span>Quickly add to your podcasts without opening a browser</span>
@@ -202,7 +210,7 @@ function LandingPage() {
                   <span>Available for Mac, Windows, and Linux</span>
                 </li>
               </ul>
-              <Button variant="outline" className="mt-6 w-full">
+              <Button variant="outline" className="mt-6 w-full text-sm md:text-base">
                 CLI Docs
                 <ExternalLink className="ml-2 h-4 w-4" />
               </Button>
@@ -210,26 +218,32 @@ function LandingPage() {
           </Card>
         </div>
       </section>
-      <section className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">Start free, upgrade when you need more</p>
-          <div className="flex items-center gap-2 justify-center mb-6">
-            <span className={`text-sm ${!isYearly ? "font-bold" : ""}`}>Monthly</span>
+      <section className="container mx-auto px-4 py-12 md:py-16">
+        <div className="text-center mb-8 md:mb-12">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4 px-4">Simple, Transparent Pricing</h2>
+          <p className="text-base md:text-xl text-gray-600 dark:text-gray-300 mb-4 px-4">
+            Start free, upgrade when you need more
+          </p>
+          <div className="flex items-center gap-2 justify-center mb-4 md:mb-6 px-4">
+            <span className={`text-xs md:text-sm ${!isYearly ? "font-bold" : ""}`}>Monthly</span>
             <Switch checked={isYearly} onCheckedChange={setIsYearly} />
-            <span className={`text-sm ${isYearly ? "font-bold" : ""}`}>
+            <span className={`text-xs md:text-sm ${isYearly ? "font-bold" : ""}`}>
               Yearly <span className="text-green-600">(Save 15%)</span>
             </span>
           </div>
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <span>No credit card required</span>
-            <span className="mx-2">•</span>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <span>Free tier always free</span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs md:text-sm text-gray-500 dark:text-gray-400 px-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+              <span>No credit card required</span>
+            </div>
+            <span className="hidden sm:inline mx-2">•</span>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+              <span>Free tier always free</span>
+            </div>
           </div>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-7xl mx-auto">
           <Card className="relative flex flex-col h-full border-2">
             <CardContent className="p-6 flex-1 flex flex-col">
               <div className="mb-4">
@@ -374,27 +388,35 @@ function LandingPage() {
             </CardContent>
           </Card>
         </div>
-        <div className="text-center mt-12 max-w-2xl mx-auto">
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+        <div className="text-center mt-8 md:mt-12 max-w-2xl mx-auto">
+          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 md:p-6">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <span className="font-semibold text-green-800 dark:text-green-400">100% Free to Start</span>
+              <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-green-600 flex-shrink-0" />
+              <span className="text-sm md:text-base font-semibold text-green-800 dark:text-green-400">
+                100% Free to Start
+              </span>
             </div>
-            <p className="text-sm text-green-700 dark:text-green-300">
+            <p className="text-xs md:text-sm text-green-700 dark:text-green-300">
               No credit card required. Start with our free tier and upgrade only when you need more capacity. Cancel
               anytime with no questions asked.
             </p>
           </div>
         </div>
       </section>
-      <section className="container mx-auto px-4 py-16">
-        <div className="max-w-3xl mx-auto text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-white">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-lg mb-8 opacity-90">Create your first podcast feed in minutes. No credit card required.</p>
-          <Link to="/signin">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
+      <section className="container mx-auto px-4 py-12 md:py-16">
+        <div className="max-w-3xl mx-auto text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl md:rounded-3xl p-8 md:p-12 text-white">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4">Ready to Get Started?</h2>
+          <p className="text-base md:text-lg mb-6 md:mb-8 opacity-90">
+            Create your first podcast feed in minutes. No credit card required.
+          </p>
+          <Link to="/signin" className="block sm:inline-block">
+            <Button
+              size="lg"
+              variant="secondary"
+              className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8 py-5 md:py-6"
+            >
               Start Converting Now
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
             </Button>
           </Link>
         </div>
@@ -412,12 +434,12 @@ interface FeatureCardProps {
 function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
     <Card className="border-2 hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
-      <CardContent className="p-6">
-        <div className="inline-flex items-center justify-center p-3 mb-4 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 text-blue-600 dark:text-blue-400">
+      <CardContent className="p-4 md:p-6">
+        <div className="inline-flex items-center justify-center p-2 md:p-3 mb-3 md:mb-4 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 text-blue-600 dark:text-blue-400">
           {icon}
         </div>
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p className="text-gray-600 dark:text-gray-300">{description}</p>
+        <h3 className="text-lg md:text-xl font-semibold mb-2">{title}</h3>
+        <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">{description}</p>
       </CardContent>
     </Card>
   );
@@ -431,13 +453,13 @@ interface StepCardProps {
 
 function StepCard({ number, title, description }: StepCardProps) {
   return (
-    <div className="flex gap-6 items-start">
-      <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-center text-xl font-bold">
+    <div className="flex gap-4 md:gap-6 items-start">
+      <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-center text-lg md:text-xl font-bold">
         {number}
       </div>
       <div className="flex-1">
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p className="text-gray-600 dark:text-gray-300">{description}</p>
+        <h3 className="text-lg md:text-xl font-semibold mb-2">{title}</h3>
+        <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">{description}</p>
       </div>
     </div>
   );

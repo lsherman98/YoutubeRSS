@@ -16,7 +16,7 @@ function RouteComponent() {
   const podcastUrl = podcast ? pb.files.getURL(podcast, podcast?.file) : "";
 
   return (
-    <div className="w-full">
+    <div className="w-full px-2 sm:px-4 md:px-0">
       {podcast && (
         <PodcastHeader
           podcast={podcast}

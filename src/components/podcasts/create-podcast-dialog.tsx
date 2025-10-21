@@ -74,13 +74,9 @@ export function CreatePodcastDialog({ isOpen, onOpenChange, disabled }: CreatePo
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          disabled={disabled}
-        >
-          Add Podcast
-        </Button>
+        <Button disabled={disabled}>Add Podcast</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="w-[95vw] max-w-[425px] sm:w-full">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />

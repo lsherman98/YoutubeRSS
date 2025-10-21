@@ -42,7 +42,7 @@ export function SubscribeInstructions({
 
         <Tabs defaultValue={initialTab} className="w-full flex flex-col flex-1 min-h-0">
           <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
-            <TabsTrigger value="apple">Apple Podcasts</TabsTrigger>
+            <TabsTrigger value="apple">Apple</TabsTrigger>
             <TabsTrigger value="spotify">Spotify</TabsTrigger>
             <TabsTrigger value="youtube">YouTube</TabsTrigger>
           </TabsList>
