@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	u "net/url"
 	"os"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -14,10 +13,14 @@ import (
 )
 
 type Client struct {
-	App             core.App
-	ProxyURL        string
-	BackupProxyURL  string
-	CurrentProxyURL string
+	App               core.App
+	ProxyURL          string
+	BackupProxyOneURL string
+	BackupProxyTwoURL string
+	CurrentProxyURL   string
+	CurrentProxy      string
+	BackupProxyOne    string
+	BackupProxyTwo    string
 }
 
 func New(app core.App) *Client {
@@ -29,10 +32,12 @@ func New(app core.App) *Client {
 	}
 
 	proxy := os.Getenv("PROXY")
-	backupProxy := os.Getenv("BACKUP_PROXY")
-	
+	backupProxyOne := os.Getenv("BACKUP_PROXY_ONE")
+	backupProxyTwo := os.Getenv("BACKUP_PROXY_TWO")
+
 	var primaryURL string
-	var backupURL string
+	var backupOneURL string
+	var backupTwoURL string
 
 	switch proxy {
 	case "ngrok":
@@ -40,47 +45,80 @@ func New(app core.App) *Client {
 	case "oxylabs":
 		primaryURL = os.Getenv("OXY_LABS_PROXY_URL")
 	case "iproyal":
-		host := os.Getenv("IP_ROYAL_PROXY_HOST")
-		auth := os.Getenv("IP_ROYAL_PROXY_AUTH")
-		url, err := u.Parse(fmt.Sprintf("http://%s@%s", auth, host))
-		if err != nil {
-			app.Logger().Error("YTDLP: failed to parse proxy URL", "error", err)
-			return nil
-		}
-		primaryURL = url.String()
+		primaryURL = os.Getenv("IP_ROYAL_PROXY_URL")
 	case "evomi":
 		primaryURL = os.Getenv("EVOMI_PROXY_URL")
 	}
 
-	if backupProxy != "" {
-		backupURL = backupProxy
+	if backupProxyOne != "" {
+		switch backupProxyOne {
+		case "ngrok":
+			backupOneURL = os.Getenv("NGROK_PROXY")
+		case "oxylabs":
+			backupOneURL = os.Getenv("OXY_LABS_PROXY_URL")
+		case "iproyal":
+			backupOneURL = os.Getenv("IP_ROYAL_PROXY_URL")
+		case "evomi":
+			backupOneURL = os.Getenv("EVOMI_PROXY_URL")
+		}
+	}
+
+	if backupProxyTwo != "" {
+		switch backupProxyTwo {
+		case "ngrok":
+			backupTwoURL = os.Getenv("NGROK_PROXY")
+		case "oxylabs":
+			backupTwoURL = os.Getenv("OXY_LABS_PROXY_URL")
+		case "iproyal":
+			backupTwoURL = os.Getenv("IP_ROYAL_PROXY_URL")
+		case "evomi":
+			backupTwoURL = os.Getenv("EVOMI_PROXY_URL")
+		}
 	}
 
 	return &Client{
-		App:             app,
-		ProxyURL:        primaryURL,
-		BackupProxyURL:  backupURL,
-		CurrentProxyURL: primaryURL,
+		App:               app,
+		ProxyURL:          primaryURL,
+		BackupProxyOneURL: backupOneURL,
+		BackupProxyTwoURL: backupTwoURL,
+		CurrentProxyURL:   primaryURL,
+		CurrentProxy:      proxy,
+		BackupProxyOne:    backupProxyOne,
+		BackupProxyTwo:    backupProxyTwo,
 	}
 }
 
-func (c *Client) SwitchToBackupProxy() bool {
-	if c.BackupProxyURL == "" {
-		c.App.Logger().Warn("YTDLP: no backup proxy configured")
-		return false
+func (c *Client) SwitchProxy(retryCount int) {
+	if retryCount >= 4 {
+		if c.BackupProxyTwoURL == "" {
+			c.App.Logger().Warn("YTDLP: no backup proxy two configured")
+			return
+		}
+		c.App.Logger().Info("YTDLP: switching to backup proxy two", "backup_url", c.BackupProxyTwoURL, "retry_count", retryCount)
+		c.CurrentProxyURL = c.BackupProxyTwoURL
+		c.CurrentProxy = c.BackupProxyTwo
+	} else if retryCount >= 2 {
+		if c.BackupProxyOneURL == "" {
+			c.App.Logger().Warn("YTDLP: no backup proxy one configured")
+			return
+		}
+		c.App.Logger().Info("YTDLP: switching to backup proxy one", "backup_url", c.BackupProxyOneURL, "retry_count", retryCount)
+		c.CurrentProxyURL = c.BackupProxyOneURL
+		c.CurrentProxy = c.BackupProxyOne
 	}
-	
-	c.App.Logger().Info("YTDLP: switching to backup proxy", "backup_url", c.BackupProxyURL)
-	c.CurrentProxyURL = c.BackupProxyURL
-	return true
 }
 
 func (c *Client) ResetToPrimaryProxy() {
 	c.CurrentProxyURL = c.ProxyURL
+	c.CurrentProxy = os.Getenv("PROXY")
 }
 
 func (c *Client) GetCurrentProxy() string {
 	return c.CurrentProxyURL
+}
+
+func (c *Client) GetCurrentProxyKey() string {
+	return c.CurrentProxy
 }
 
 func (c *Client) GetInfo(url string) (*goutubedl.Result, error) {
@@ -98,12 +136,18 @@ func (c *Client) GetInfo(url string) (*goutubedl.Result, error) {
 	return &result, nil
 }
 
-func (c *Client) Download(url string, record *core.Record, result *goutubedl.Result) (*goutubedl.DownloadResult, string, error) {
+func (c *Client) Download(url string, record *core.Record, result *goutubedl.Result, retryCount int) (*goutubedl.DownloadResult, string, error) {
 	record.Set("title", result.Info.Title)
 	record.Set("duration", result.Info.Duration)
 	record.Set("channel", result.Info.Channel)
 	record.Set("description", result.Info.Description)
 	record.Set("video_id", result.Info.ID)
+
+	if os.Getenv("SIMULATE_DOWNLOAD_FAILURE") == "true" && retryCount < 4 {
+		c.App.Logger().Warn("YTDLP: simulating download failure for testing",
+			"proxy", c.CurrentProxyURL)
+		return nil, "", fmt.Errorf("simulated download failure for testing (attempt %d)", retryCount)
+	}
 
 	download, err := result.DownloadWithOptions(context.Background(), goutubedl.DownloadOptions{
 		DownloadAudioOnly: true,

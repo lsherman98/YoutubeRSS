@@ -56,7 +56,9 @@ func Init(app *pocketbase.PocketBase) error {
 			webhookClient.Send("CREATED")
 		}
 
-		downloader.AddJob(e.App, job, collections.Jobs)
+		if err := downloader.AddJob(e.App, job, collections.Jobs); err != nil {
+			e.App.Logger().Error("Jobs Hooks: failed to add job to downloader queue: " + err.Error())
+		}
 
 		return e.Next()
 	})

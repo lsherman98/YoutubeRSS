@@ -24,7 +24,7 @@ func Init(app *pocketbase.PocketBase, maxWorkers int, queueSize int) error {
 	})
 
 	routine.FireAndForget(func() {
-		ticker := time.NewTicker(30 * time.Second)
+		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 
 		for range ticker.C {
@@ -46,9 +46,13 @@ func AddJob(app core.App, record *core.Record, collection string) error {
 	queueRecord.Set("record_id", record.Id)
 	queueRecord.Set("collection", collection)
 	queueRecord.Set("status", "PENDING")
-	queueRecord.Set("max_retries", 5)
+	queueRecord.Set("max_retries", 6)
 
-	return app.Save(queueRecord)
+	if err := app.Save(queueRecord); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func resetHangingJobs(app *pocketbase.PocketBase) {
@@ -155,7 +159,7 @@ func processQueue(app *pocketbase.PocketBase, maxWorkers int) {
 			}
 
 			if jobErr != nil {
-				handleJobFailure(app, freshQueueRecord, jobErr)
+				handleJobFailure(app, record, freshQueueRecord, jobErr)
 				return
 			}
 
@@ -163,19 +167,15 @@ func processQueue(app *pocketbase.PocketBase, maxWorkers int) {
 			if err := app.Save(freshQueueRecord); err != nil {
 				app.Logger().Error("Failed to update job status to COMPLETED", "job_id", queueRecordId, "error", err)
 			}
-			// if err := app.Delete(freshQueueRecord); err != nil {
-			// 	app.Logger().Error("Failed to delete job from queue", "job_id", queueRecordId, "error", err)
-			// }
 		})
 	}
 }
 
-func handleJobFailure(app *pocketbase.PocketBase, queueRecord *core.Record, jobErr error) {
+func handleJobFailure(app *pocketbase.PocketBase, record *core.Record, queueRecord *core.Record, jobErr error) {
 	retryCount := queueRecord.GetInt("retry_count")
 	maxRetries := queueRecord.GetInt("max_retries")
-
 	if maxRetries == 0 {
-		maxRetries = 3
+		maxRetries = 6
 	}
 
 	retryCount++
@@ -188,8 +188,26 @@ func handleJobFailure(app *pocketbase.PocketBase, queueRecord *core.Record, jobE
 			"retry_count", retryCount,
 			"error", jobErr.Error())
 
-		if err := app.Delete(queueRecord); err != nil {
-			app.Logger().Error("Failed to delete failed job from queue", "job_id", queueRecord.Id, "error", err)
+		queueRecord.Set("status", "FAILED")
+		queueRecord.Set("worker_id", nil)
+
+		if err := app.Save(queueRecord); err != nil {
+			app.Logger().Error("Failed to save queue record as FAILED", "job_id", queueRecord.Id, "error", err)
+		}
+
+		record.Set("status", "ERROR")
+		record.Set("error", jobErr.Error())
+		if err := app.Save(record); err != nil {
+			app.Logger().Error("Failed to update record status to ERROR", "record_id", record.Id, "error", err)
+		}
+
+		collectionName := queueRecord.GetString("collection")
+		if collectionName == collections.Jobs {
+			user := record.GetString("user")
+			webhookClient := webhook_client.New(user, app, record)
+			if webhookClient != nil {
+				webhookClient.Send("ERROR")
+			}
 		}
 	} else {
 		app.Logger().Info("Job failed, will retry",
@@ -243,11 +261,9 @@ func processJob(app *pocketbase.PocketBase, job *core.Record, queueRecord *core.
 	}
 
 	retryCount := queueRecord.GetInt("retry_count")
-	if retryCount >= 2 && ytdlpClient.SwitchToBackupProxy() {
-		app.Logger().Info("Downloader: switched to backup proxy", "retry_count", retryCount)
-	}
+	ytdlpClient.SwitchProxy(retryCount)
 
-	currentProxy := ytdlpClient.GetCurrentProxy()
+	currentProxy := ytdlpClient.GetCurrentProxyKey()
 	queueRecord.Set("last_proxy", currentProxy)
 	if err := app.Save(queueRecord); err != nil {
 		app.Logger().Warn("Downloader: failed to update queue record with proxy info", "error", err)
@@ -256,14 +272,6 @@ func processJob(app *pocketbase.PocketBase, job *core.Record, queueRecord *core.
 	result, err := ytdlpClient.GetInfo(url)
 	if err != nil {
 		app.Logger().Error("Downloader: failed to get video info", "error", err)
-		job.Set("status", "ERROR")
-		job.Set("error", err.Error())
-		if saveErr := app.Save(job); saveErr != nil {
-			app.Logger().Error("Downloader: failed to update job status to ERROR", "error", saveErr)
-		}
-		if webhookClient != nil {
-			webhookClient.Send("ERROR")
-		}
 		return err
 	}
 
@@ -303,17 +311,9 @@ func processJob(app *pocketbase.PocketBase, job *core.Record, queueRecord *core.
 	if err == nil && existingDownload != nil {
 		download = existingDownload
 	} else {
-		audio, path, err := ytdlpClient.Download(url, download, result)
+		audio, path, err := ytdlpClient.Download(url, download, result, retryCount)
 		if err != nil {
 			app.Logger().Error("Downloader: failed to download audio", "error", err)
-			job.Set("status", "ERROR")
-			job.Set("error", err.Error())
-			if err := app.Save(job); err != nil {
-				app.Logger().Error("Downloader: failed to update job status to ERROR", "error", err)
-			}
-			if webhookClient != nil {
-				webhookClient.Send("ERROR")
-			}
 			return err
 		}
 		defer audio.Close()
@@ -397,11 +397,9 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record, queueRecor
 	}
 
 	retryCount := queueRecord.GetInt("retry_count")
-	if retryCount >= 2 && ytdlpClient.SwitchToBackupProxy() {
-		app.Logger().Info("Downloader: switched to backup proxy", "retry_count", retryCount)
-	}
+	ytdlpClient.SwitchProxy(retryCount)
 
-	currentProxy := ytdlpClient.GetCurrentProxy()
+	currentProxy := ytdlpClient.GetCurrentProxyKey()
 	queueRecord.Set("last_proxy", currentProxy)
 	if err := app.Save(queueRecord); err != nil {
 		app.Logger().Warn("Downloader: failed to update queue record with proxy info", "error", err)
@@ -444,7 +442,7 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record, queueRecor
 	if err == nil && existingDownload != nil {
 		download = existingDownload
 	} else {
-		audio, path, err := ytdlpClient.Download(url, download, result)
+		audio, path, err := ytdlpClient.Download(url, download, result, retryCount)
 		if err != nil {
 			app.Logger().Error("Downloader: failed to download audio", "error", err)
 			return err
