@@ -2,6 +2,7 @@ package items_hooks
 
 import (
 	"regexp"
+	"time"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/lsherman98/yt-rss/pocketbase/downloader"
@@ -105,8 +106,9 @@ func Init(app *pocketbase.PocketBase) error {
 			audioURL := fileClient.GetFileURL(upload, "file")
 			title := upload.GetString("title")
 			duration := upload.GetFloat("duration")
-
-			rss_utils.AddItemToPodcast(&p, title, audioURL, "No description provided.", upload.Id, audioURL, int64(duration))
+			now := time.Now()
+	
+			rss_utils.AddItemToPodcast(&p, title, audioURL, "No description provided.", upload.Id, audioURL, int64(duration), &now)
 
 			routine.FireAndForget(func() {
 				if err := rss_utils.UpdateXMLFile(e.App, fileClient, p, podcast); err != nil {

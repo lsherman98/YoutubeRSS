@@ -34,13 +34,13 @@ func NewPodcast(title, link, description, authorName, email, image string) podca
 	return p
 }
 
-func AddItemToPodcast(p *podcast.Podcast, title, url, description, guid, enclosure string, length int64) {
-	pubDate := time.Now()
+func AddItemToPodcast(p *podcast.Podcast, title, url, description, guid, enclosure string, length int64, date *time.Time) {
+	pubDate := date
 	item := podcast.Item{
 		Title:       title,
 		Link:        url,
 		Description: description,
-		PubDate:     &pubDate,
+		PubDate:     pubDate,
 		GUID:        guid,
 		Author:      &podcast.Author{Name: p.IOwner.Name, Email: p.IOwner.Email},
 		Enclosure:   &podcast.Enclosure{URL: enclosure, TypeFormatted: podcast.MP3.String(), Type: podcast.MP3, Length: length},
@@ -103,7 +103,7 @@ func ParseXML(data string) (podcast.Podcast, error) {
 			}
 		}
 
-		AddItemToPodcast(&p, item.Title, item.Link, item.Description, item.GUID.Value, item.Enclosure.URL, length)
+		AddItemToPodcast(&p, item.Title, item.Link, item.Description, item.GUID.Value, item.Enclosure.URL, length, item.PubDateParsed)
 	}
 
 	return p, nil

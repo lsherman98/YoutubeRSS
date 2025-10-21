@@ -474,7 +474,8 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record, queueRecor
 		description = "No description available."
 	}
 
-	rss_utils.AddItemToPodcast(&p, title, audioURL, description, download.Id, audioURL, int64(duration))
+	now := time.Now()
+	rss_utils.AddItemToPodcast(&p, title, audioURL, description, download.Id, audioURL, int64(duration), &now)
 
 	if err := rss_utils.UpdateXMLFile(app, fileClient, p, podcast); err != nil {
 		app.Logger().Error("Downloader: failed to update XML file", "error", err)
