@@ -287,9 +287,9 @@ function LandingPage() {
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">Usage limits that work for you</p>
                 <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">{isYearly ? "$10.20" : "$12"}</div>
+                  <div className="text-3xl font-bold">{isYearly ? "$6.80" : "$8"}</div>
                   <div className="text-sm text-gray-500">{isYearly ? "per month" : "per month"}</div>
-                  <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $122/year" : ""}</div>
+                  <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $82/year" : ""}</div>
                 </div>
               </div>
               <ul className="space-y-3 flex-1">
@@ -324,9 +324,9 @@ function LandingPage() {
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">For heavy users and API access</p>
                 <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">{isYearly ? "$20.40" : "$24"}</div>
+                  <div className="text-3xl font-bold">{isYearly ? "$13.60" : "$16"}</div>
                   <div className="text-sm text-gray-500">{isYearly ? "per month" : "per month"}</div>
-                  <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $244/year" : ""}</div>
+                  <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $164/year" : ""}</div>
                 </div>
               </div>
               <ul className="space-y-3 flex-1">
@@ -358,9 +358,9 @@ function LandingPage() {
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">For large workloads</p>
                 <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">{isYearly ? "$40.80" : "$48"}</div>
+                  <div className="text-3xl font-bold">{isYearly ? "$27.20" : "$32"}</div>
                   <div className="text-sm text-gray-500">{isYearly ? "per month" : "per month"}</div>
-                  <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $489/year" : ""}</div>
+                  <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $326/year" : ""}</div>
                 </div>
               </div>
               <ul className="space-y-3 flex-1">
