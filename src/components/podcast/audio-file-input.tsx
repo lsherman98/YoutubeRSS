@@ -13,12 +13,12 @@ type AudioFileItem = { file: File; title: string };
 
 interface AudioFileInputProps {
   podcastId: string;
-  onSuccess: () => void;
+  setOpen: (open: boolean) => void;
   audioItems: AudioFileItem[];
   setAudioItems: (items: AudioFileItem[]) => void;
 }
 
-export function AudioFileInput({ podcastId, onSuccess, audioItems, setAudioItems }: AudioFileInputProps) {
+export function AudioFileInput({ podcastId, setOpen, audioItems, setAudioItems }: AudioFileInputProps) {
   const addAudioFilesMutation = useAddAudioFiles();
   const [isDragOver, setIsDragOver] = useState(false);
   const hasInvalidTitles = audioItems.some((item) => item.title.length > 0 && item.title.length < 2);
@@ -34,8 +34,8 @@ export function AudioFileInput({ podcastId, onSuccess, audioItems, setAudioItems
       {
         onSuccess: () => {
           setAudioItems([]);
-          onSuccess();
           toast.success("Files uploaded successfully");
+          setOpen(false);
         },
       }
     );

@@ -30,7 +30,7 @@ export function PodcastItemsTable({ podcastItems }: PodcastItemsTableProps) {
   };
 
   return (
-    <div className="h-[calc(100vh-254px)] md:h-[calc(100vh-254px)] overflow-auto">
+    <div className="h-[calc(100vh-254px)] md:h-[calc(100vh-260px)] overflow-auto">
       <div className="min-w-full md:min-w-0">
         <Table>
           <TableHeader>

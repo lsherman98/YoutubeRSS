@@ -131,7 +131,7 @@ export function AddItemDialog({ podcastId }: AddItemDialogProps) {
               ) : (
                 <AudioFileInput
                   podcastId={podcastId}
-                  onSuccess={() => setOpen(false)}
+                  setOpen={setOpen}
                   audioItems={audioUploads}
                   setAudioItems={setAudioUploads}
                 />
