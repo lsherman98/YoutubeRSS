@@ -1,27 +1,11 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  Rss,
-  Youtube,
-  Zap,
-  CheckCircle2,
-  ArrowRight,
-  Code2,
-  Terminal,
-  Webhook,
-  ExternalLink,
-  Mic,
-  Wifi,
-  Key,
-  Database,
-  Infinity,
-  Check,
-} from "lucide-react";
+import { Rss, Youtube, Zap, CheckCircle2, ArrowRight, Code2, Terminal, Webhook, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { pb } from "@/lib/pocketbase";
+import { PricingToggle } from "@/components/subscription/pricing-toggle";
+import { PricingPlans } from "@/components/subscription/pricing-plans";
 
 export const Route = createFileRoute("/landing/")({
   component: LandingPage,
@@ -181,8 +165,8 @@ function LandingPage() {
                   <span>Webhook notifications for asynchronous workflows</span>
                 </li>
               </ul>
-              <Button variant="outline" className="mt-6 w-full text-sm md:text-base">
-                API Docs
+              <Button variant="outline" className="mt-6 w-full text-sm md:text-base" disabled>
+                API Docs (Coming Soon)
                 <ExternalLink className="ml-2 h-4 w-4" />
               </Button>
             </CardContent>
@@ -210,10 +194,15 @@ function LandingPage() {
                   <span>Available for Mac, Windows, and Linux</span>
                 </li>
               </ul>
-              <Button variant="outline" className="mt-6 w-full text-sm md:text-base">
-                CLI Docs
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="mt-6 space-y-3">
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-md p-3 font-mono text-xs md:text-sm">
+                  brew install lsherman/ytrss/ytrss
+                </div>
+                <Button variant="outline" className="w-full text-sm md:text-base" disabled>
+                  CLI Docs (Coming Soon)
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -224,14 +213,8 @@ function LandingPage() {
           <p className="text-base md:text-xl text-gray-600 dark:text-gray-300 mb-4 px-4">
             Start free, upgrade when you need more
           </p>
-          <div className="flex items-center gap-2 justify-center mb-4 md:mb-6 px-4">
-            <span className={`text-xs md:text-sm ${!isYearly ? "font-bold" : ""}`}>Monthly</span>
-            <Switch checked={isYearly} onCheckedChange={setIsYearly} />
-            <span className={`text-xs md:text-sm ${isYearly ? "font-bold" : ""}`}>
-              Yearly <span className="text-green-600">(Save 15%)</span>
-            </span>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs md:text-sm text-gray-500 dark:text-gray-400 px-4">
+          <PricingToggle isYearly={isYearly} onToggle={setIsYearly} />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs md:text-sm text-gray-500 dark:text-gray-400 px-4 mt-4">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
               <span>No credit card required</span>
@@ -243,151 +226,7 @@ function LandingPage() {
             </div>
           </div>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-7xl mx-auto">
-          <Card className="relative flex flex-col h-full border-2">
-            <CardContent className="p-6 flex-1 flex flex-col">
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Mic className="h-5 w-5 text-gray-600" />
-                  <h3 className="text-xl font-semibold">Free</h3>
-                </div>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">Everything you need to get started</p>
-                <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">$0</div>
-                  <div className="text-sm text-gray-500">forever</div>
-                  <div className="text-xs text-gray-500 h-4"></div>
-                </div>
-              </div>
-              <ul className="space-y-3 flex-1">
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">15 uploads</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">500MB per month</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">1 podcast</span>
-                </li>
-                <li className="flex items-center gap-2 opacity-50">
-                  <span className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm">No API access</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-          <Card className="relative flex flex-col h-full border-2">
-            <CardContent className="p-6 flex-1 flex flex-col">
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Wifi className="h-5 w-5 text-blue-500" />
-                  <h3 className="text-xl font-semibold">Basic</h3>
-                </div>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">Usage limits that work for you</p>
-                <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">{isYearly ? "$6.83" : "$8"}</div>
-                  <div className="text-sm text-gray-500">{isYearly ? "per month" : "per month"}</div>
-                  <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $82/year" : ""}</div>
-                </div>
-              </div>
-              <ul className="space-y-3 flex-1">
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">50 uploads</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">2GB per month</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">Unlimited podcasts</span>
-                </li>
-                <li className="flex items-center gap-2 opacity-50">
-                  <span className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm">No API access</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-          <Card className="relative flex flex-col h-full border-2 border-blue-500">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge className="bg-blue-600 text-white">Most Popular</Badge>
-            </div>
-            <CardContent className="p-6 flex-1 flex flex-col">
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className="h-5 w-5 text-yellow-500" />
-                  <h3 className="text-xl font-semibold">Power User</h3>
-                </div>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">For heavy users and API access</p>
-                <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">{isYearly ? "$13.67" : "$16"}</div>
-                  <div className="text-sm text-gray-500">{isYearly ? "per month" : "per month"}</div>
-                  <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $164/year" : ""}</div>
-                </div>
-              </div>
-              <ul className="space-y-3 flex-1">
-                <li className="flex items-center gap-2">
-                  <Infinity className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm font-medium">Unlimited uploads</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">5GB per month</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">Unlimited podcasts</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Key className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm font-medium">API Access</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-          <Card className="relative flex flex-col h-full border-2">
-            <CardContent className="p-6 flex-1 flex flex-col">
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Database className="h-5 w-5 text-purple-500" />
-                  <h3 className="text-xl font-semibold">Professional</h3>
-                </div>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">For large workloads</p>
-                <div className="mb-4 min-h-[4.5rem]">
-                  <div className="text-3xl font-bold">{isYearly ? "$27.17" : "$32"}</div>
-                  <div className="text-sm text-gray-500">{isYearly ? "per month" : "per month"}</div>
-                  <div className="text-xs text-gray-500 h-4">{isYearly ? "Billed $326/year" : ""}</div>
-                </div>
-              </div>
-              <ul className="space-y-3 flex-1">
-                <li className="flex items-center gap-2">
-                  <Infinity className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm font-medium">Unlimited uploads</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">12GB per month</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">Unlimited podcasts</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm">Bandwidth rolls over each month</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Key className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <span className="text-sm font-medium">API Access</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+        <PricingPlans isYearly={isYearly} showActions={false} />
         <div className="text-center mt-8 md:mt-12 max-w-2xl mx-auto">
           <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 md:p-6">
             <div className="flex items-center justify-center gap-2 mb-2">

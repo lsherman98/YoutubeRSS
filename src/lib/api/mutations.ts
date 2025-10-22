@@ -118,7 +118,6 @@ export function useCreateWebhook() {
 
     return useMutation({
         mutationFn: (data: Partial<WebhooksRecord>) => createWebhook(data),
-        onError: handleError,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["webhook"] });
         },
@@ -130,7 +129,6 @@ export function useUpdateWebhook() {
 
     return useMutation({
         mutationFn: ({ id, data }: { id: string, data: Partial<WebhooksRecord> }) => updateWebhook(id, data),
-        onError: handleError,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["webhook"] });
         },
@@ -142,7 +140,6 @@ export function useDeleteWebhook() {
 
     return useMutation({
         mutationFn: (id: string) => deleteWebhook(id),
-        onError: handleError,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["webhook"] });
         },
@@ -173,7 +170,6 @@ export function useCreateIssue() {
 export function useUpdateUsername() {
     return useMutation({
         mutationFn: (username: string) => updateUsername(username),
-        onError: handleError,
     })
 }
 

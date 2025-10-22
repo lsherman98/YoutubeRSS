@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Info, KeyRound, Podcast, Send, Server, WalletCards } from "lucide-react";
+import { KeyRound, Podcast, Send, Server, WalletCards } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { pb } from "@/lib/pocketbase";
 import { useGetUsage } from "@/lib/api/queries";
@@ -53,11 +53,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
     ],
     navSecondary: [
-      {
-        title: "Documentation",
-        url: "/docs",
-        icon: Info,
-      },
+      // {
+      //   title: "Documentation",
+      //   url: "/docs",
+      //   icon: Info,
+      // },
       {
         title: "Subscriptions",
         url: "/subscriptions",

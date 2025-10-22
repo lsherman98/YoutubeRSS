@@ -14,12 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { WebhooksEventsOptions, type WebhooksRecord, type WebhooksResponse } from "@/lib/pocketbase-types";
 import { Trash2 } from "lucide-react";
+import { useCreateWebhook, useDeleteWebhook, useUpdateWebhook } from "@/lib/api/mutations";
+import { toast } from "sonner";
 
 interface WebhookFormProps {
-  webhook?: WebhooksResponse;
-  onSubmit: (data: Partial<WebhooksRecord>) => void;
-  onDelete?: () => void;
-  isPending: boolean;
+  webhook: WebhooksResponse | null | undefined;
   trigger: React.ReactNode;
 }
 
@@ -46,24 +45,51 @@ const EVENT_OPTIONS = [
   },
 ];
 
-export function WebhookForm({ webhook, onSubmit, onDelete, isPending, trigger }: WebhookFormProps) {
+export function WebhookForm({ webhook, trigger }: WebhookFormProps) {
   const [url, setUrl] = useState(webhook?.url || "");
   const [selectedEvents, setSelectedEvents] = useState<WebhooksEventsOptions[]>(webhook?.events || []);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const createWebhookMutation = useCreateWebhook();
+  const updateWebhookMutation = useUpdateWebhook();
+  const deleteWebhookMutation = useDeleteWebhook();
 
   const handleEventToggle = (event: WebhooksEventsOptions) => {
     setSelectedEvents((prev) => (prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event]));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!url || selectedEvents.length === 0) return;
-    onSubmit({ url, events: selectedEvents });
+  const handleCreateWebhook = async (data: Partial<WebhooksRecord>) => {
+    try {
+      await createWebhookMutation.mutateAsync(data);
+    } catch (error) {
+      toast.error("Failed to create webhook");
+    }
   };
 
-  const handleDelete = () => {
-    onDelete?.();
-    setShowDeleteDialog(false);
+  const handleUpdateWebhook = async (data: Partial<WebhooksRecord>) => {
+    if (!webhook) return;
+    try {
+      await updateWebhookMutation.mutateAsync({ id: webhook.id, data });
+    } catch (error) {
+      toast.error("Failed to update webhook");
+    }
+  };
+
+  const handleDeleteWebhook = async () => {
+    if (!webhook) return;
+    try {
+      await deleteWebhookMutation.mutateAsync(webhook.id);
+    } catch (error) {
+      toast.error("Failed to delete webhook");
+    }
+  };
+
+  const handleSubmit = () => {
+    if (webhook) {
+      handleUpdateWebhook({ url, events: selectedEvents });
+    } else {
+      handleCreateWebhook({ url, events: selectedEvents });
+    }
   };
 
   const isValid = url.trim() !== "" && selectedEvents.length > 0;
@@ -71,7 +97,7 @@ export function WebhookForm({ webhook, onSubmit, onDelete, isPending, trigger }:
   return (
     <>
       <Dialog>
-        {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{webhook ? "Edit Webhook" : "Create Webhook"}</DialogTitle>
@@ -121,10 +147,13 @@ export function WebhookForm({ webhook, onSubmit, onDelete, isPending, trigger }:
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button type="submit" disabled={!isValid || isPending}>
-                {isPending ? "Saving..." : webhook ? "Update Webhook" : "Create Webhook"}
+              <Button
+                type="submit"
+                disabled={!isValid || createWebhookMutation.isPending || updateWebhookMutation.isPending}
+              >
+                {webhook ? "Update Webhook" : "Create Webhook"}
               </Button>
-              {onDelete && (
+              {webhook && (
                 <Button
                   type="button"
                   variant="destructive"
@@ -151,7 +180,7 @@ export function WebhookForm({ webhook, onSubmit, onDelete, isPending, trigger }:
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button variant="destructive" onClick={handleDeleteWebhook}>
               Delete
             </Button>
           </DialogFooter>
