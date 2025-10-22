@@ -261,7 +261,7 @@ func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscrip
 		monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
 			"user": user.Id,
 		})
-		if err != nil || monthlyUsageRecords == nil || len(monthlyUsageRecords) == 0 {
+		if err != nil || len(monthlyUsageRecords) == 0 {
 			e.App.Logger().Error("Stripe Hooks: failed to find monthly usage record: " + err.Error())
 		} else {
 			usageRecord := monthlyUsageRecords[0]
@@ -269,7 +269,12 @@ func updateSubscriptionRecord(e *core.RequestEvent, subscription stripe.Subscrip
 			usageRecord.Set("limit", tier.Get("monthly_usage_limit"))
 			if !cancelled {
 				usageRecord.Set("billing_cycle_start", time.Unix(subscription.Items.Data[0].CurrentPeriodStart, 0).UTC().Format(time.RFC3339))
-				usageRecord.Set("billing_cycle_end", time.Unix(subscription.Items.Data[0].CurrentPeriodEnd, 0).UTC().Format(time.RFC3339))
+
+				if tier.GetString("interval") == "yearly" {
+					usageRecord.Set("billing_cycle_end", time.Unix(subscription.Items.Data[0].CurrentPeriodStart, 0).AddDate(0, 1, 0).UTC().Format(time.RFC3339))
+				} else {
+					usageRecord.Set("billing_cycle_end", time.Unix(subscription.Items.Data[0].CurrentPeriodEnd, 0).UTC().Format(time.RFC3339))
+				}
 			}
 			if err := e.App.Save(usageRecord); err != nil {
 				return err

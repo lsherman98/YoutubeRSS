@@ -11,20 +11,18 @@ func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordCreateRequest(collections.Uploads).BindFunc(func(e *core.RecordRequestEvent) error {
 		user, err := e.App.FindRecordById(collections.Users, e.Auth.Id)
 		if err != nil {
-			e.App.Logger().Error("Uploads Hooks: failed to find user record: " + err.Error())
-			return e.ForbiddenError("User not found", nil)
+			return e.ForbiddenError("user not found", nil)
 		}
 
 		tier, err := e.App.FindRecordById(collections.SubscriptionTiers, user.GetString("tier"))
 		if err != nil {
-			e.App.Logger().Error("Uploads Hooks: failed to find subscription tier record: " + err.Error())
-			return e.ForbiddenError("Subscription tier not found", nil)
+			return e.ForbiddenError("subscription tier not found", nil)
 		}
 
 		monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
 			"user": e.Auth.Id,
 		})
-		if err != nil || monthlyUsageRecords == nil {
+		if err != nil || len(monthlyUsageRecords) == 0 {
 			e.App.Logger().Error("Uploads Hooks: failed to find monthly usage record: " + err.Error())
 			return e.Next()
 		}
@@ -54,15 +52,12 @@ func Init(app *pocketbase.PocketBase) error {
 		itemRecord.Set("type", "upload")
 		itemRecord.Set("upload", e.Record.Id)
 		itemRecord.Set("status", "SUCCESS")
-
 		if err := e.App.Save(itemRecord); err != nil {
-			e.App.Logger().Error("Uploads Hooks: failed to create item record: " + err.Error())
 			return e.Next()
 		}
 
 		e.Record.Set("item", itemRecord.Id)
 		if err := e.App.Save(e.Record); err != nil {
-			e.App.Logger().Error("Uploads Hooks: failed to update upload record with item ID: " + err.Error())
 			return e.Next()
 		}
 

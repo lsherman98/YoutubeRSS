@@ -7,6 +7,13 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+func respondWithUrl(e *core.RequestEvent, url, prefix string) error {
+	if url != "" {
+		return e.JSON(200, map[string]any{"url": prefix + url})
+	}
+	return e.JSON(200, map[string]any{"url": nil})
+}
+
 func Init(app *pocketbase.PocketBase) error {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/api/share_url/{podcastId}/{platform}", func(e *core.RequestEvent) error {
@@ -24,29 +31,13 @@ func Init(app *pocketbase.PocketBase) error {
 
 			switch platform {
 			case "pocketcasts":
-				url := podcast.GetString("pocketcasts_url")
-				if url != "" {
-					return e.JSON(200, map[string]any{"url": url})
-				}
-				return e.JSON(200, map[string]any{"url": nil})
+				return respondWithUrl(e, podcast.GetString("pocketcasts_url"), "")
 			case "apple":
-				url := podcast.GetString("apple_url")
-				if url != "" {
-					return e.JSON(200, map[string]any{"url": "podcast://" + url})
-				}
-				return e.JSON(200, map[string]any{"url": nil})
+				return respondWithUrl(e, podcast.GetString("apple_url"), "podcast://")
 			case "spotify":
-				url := podcast.GetString("spotify_url")
-				if url != "" {
-					return e.JSON(200, map[string]any{"url": url})
-				}
-				return e.JSON(200, map[string]any{"url": nil})
+				return respondWithUrl(e, podcast.GetString("spotify_url"), "")
 			case "youtube":
-				url := podcast.GetString("youtube_url")
-				if url != "" {
-					return e.JSON(200, map[string]any{"url": url})
-				}
-				return e.JSON(200, map[string]any{"url": nil})
+				return respondWithUrl(e, podcast.GetString("youtube_url"), "")
 			}
 
 			return e.NotFoundError("platform not supported", nil)

@@ -17,19 +17,16 @@ func Init(app *pocketbase.PocketBase) error {
 
 		monthlyUsageCollection, err := e.App.FindCollectionByNameOrId(collections.MonthlyUsage)
 		if err != nil {
-			e.App.Logger().Error("Users Hooks: failed to find monthly usage collection: " + err.Error())
 			return e.Next()
 		}
 
 		freeTier, err := e.App.FindFirstRecordByData(collections.SubscriptionTiers, "price_id", "free")
 		if err != nil {
-			e.App.Logger().Error("Users Hooks: failed to find free subscription tier: " + err.Error())
 			return e.Next()
 		}
 
 		e.Record.Set("tier", freeTier.Id)
 		if err := e.App.Save(e.Record); err != nil {
-			e.App.Logger().Error("Users Hooks: failed to set user tier: " + err.Error())
 			return e.Next()
 		}
 
@@ -40,7 +37,6 @@ func Init(app *pocketbase.PocketBase) error {
 		usageRecord.Set("tier", freeTier.Id)
 		usageRecord.Set("limit", freeTier.Get("monthly_usage_limit"))
 		if err := e.App.Save(usageRecord); err != nil {
-			e.App.Logger().Error("Users Hooks: failed to create monthly usage record: " + err.Error())
 			return e.Next()
 		}
 
@@ -64,7 +60,6 @@ func Init(app *pocketbase.PocketBase) error {
 		params := &stripe.SubscriptionCancelParams{}
 		_, err = subscription.Cancel(subscriptionId, params)
 		if err != nil {
-			e.App.Logger().Error("Users Hooks: failed to cancel stripe subscription: " + err.Error())
 			return e.Next()
 		}
 

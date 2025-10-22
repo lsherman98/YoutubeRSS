@@ -23,8 +23,7 @@ func Init(app *pocketbase.PocketBase) error {
 		monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
 			"user": e.Auth.Id,
 		})
-		if err != nil || monthlyUsageRecords == nil {
-			e.App.Logger().Error("Jobs Hooks: failed to find monthly usage record: " + err.Error())
+		if err != nil || len(monthlyUsageRecords) == 0 {
 			return e.Next()
 		}
 		monthlyUsage := monthlyUsageRecords[0]
@@ -42,14 +41,6 @@ func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordAfterCreateSuccess(collections.Jobs).BindFunc(func(e *core.RecordEvent) error {
 		job := e.Record
 		user := job.GetString("user")
-
-		monthlyUsageRecords, err := e.App.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{
-			"user": user,
-		})
-		if err != nil || monthlyUsageRecords == nil {
-			e.App.Logger().Error("Jobs Hooks: failed to find monthly usage record: " + err.Error())
-			return e.Next()
-		}
 
 		webhookClient := webhook_client.New(user, e.App, job)
 		if webhookClient != nil {

@@ -30,7 +30,7 @@ func main() {
 	app := pocketbase.New()
 
 	pid := os.Getpid()
-	app.Logger().Info("Starting PocketBase", "pid", pid)
+	app.Logger().Info("Youtube RSS Started", "pid", pid)
 
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")

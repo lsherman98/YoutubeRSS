@@ -3,7 +3,6 @@ package webhook_client
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"slices"
 	"time"
@@ -71,12 +70,12 @@ func (c *Client) Send(event string) error {
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal webhook payload: %w", err)
+		return err
 	}
 
 	webhookEvents, err := c.App.FindCollectionByNameOrId(collections.WebhookEvents)
 	if err != nil {
-		return fmt.Errorf("failed to find webhook_events collection: %w", err)
+		return err
 	}
 
 	eventRecord := core.NewRecord(webhookEvents)
@@ -86,7 +85,7 @@ func (c *Client) Send(event string) error {
 	eventRecord.Set("event", event)
 	eventRecord.Set("status", "ACTIVE")
 	if err := c.App.Save(eventRecord); err != nil {
-		return fmt.Errorf("failed to save webhook event record: %w", err)
+		return err
 	}
 
 	routine.FireAndForget(func() {
@@ -103,7 +102,8 @@ func (c *Client) sendWithRetries(body []byte, eventRecord *core.Record) {
 	for i := range maxRetries {
 		req, err := http.NewRequest("POST", c.URL, bytes.NewBuffer(body))
 		if err != nil {
-			return
+			c.App.Logger().Error("WebhookClient: failed to create request", "error", err)
+			continue
 		}
 		req.Header.Set("Content-Type", "application/json")
 
@@ -118,13 +118,13 @@ func (c *Client) sendWithRetries(body []byte, eventRecord *core.Record) {
 
 		eventRecord.Set("attempts", eventRecord.GetInt("attempts")+1)
 		if err := c.App.Save(eventRecord); err != nil {
-			return
+			continue
 		}
 
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			eventRecord.Set("status", "SUCCESS")
 			if err := c.App.Save(eventRecord); err != nil {
-				return
+				c.App.Logger().Error("WebhookClient: failed to update event record", "error", err)
 			}
 			return
 		}

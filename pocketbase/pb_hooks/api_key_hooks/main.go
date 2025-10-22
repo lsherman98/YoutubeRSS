@@ -11,7 +11,7 @@ func Init(app *pocketbase.PocketBase) error {
 	app.OnRecordCreateRequest(collections.APIKeys).BindFunc(func(e *core.RecordRequestEvent) error {
 		apiKey := security.RandomString(32)
 		hashedAPIKey := security.SHA256(apiKey)
-		e.Record.Set(("hashed_key"), hashedAPIKey)
+		e.Record.Set("hashed_key", hashedAPIKey)
 		if err := e.App.Save(e.Record); err != nil {
 			return e.InternalServerError("failed to generate api key", nil)
 		}
