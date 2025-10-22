@@ -118,18 +118,16 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 	if err != nil {
 		return nil, "", err
 	}
-	_, err = io.Copy(f, download)
-	if err != nil {
-		f.Close()
-		return nil, "", err
-	}
-	f.Close()
+	defer f.Close()
+	io.Copy(f, download)
 
 	convertedPath := directory + "/" + result.Info.ID + ".mp3"
 	err = ffmpeg.Input(path).
 		Output(convertedPath, ffmpeg.KwArgs{"vn": "", "acodec": "libmp3lame", "ab": "192k"}).
 		OverWriteOutput().ErrorToStdOut().Run()
 	if err != nil {
+		os.Remove(path)
+		c.App.Logger().Error("YTDLP: ffmpeg conversion failed", "error", err)
 		return nil, "", err
 	}
 
