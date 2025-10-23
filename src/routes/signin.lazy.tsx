@@ -83,14 +83,22 @@ const UserLoginForm = () => {
         <Label htmlFor="email">Email</Label>
         <Input id="email" type="email" name="email" placeholder="your@email.com" required />
       </div>
-
       <div className="grid gap-2">
         <Label htmlFor="password">Password</Label>
         <Input id="password" name="password" type="password" required />
       </div>
-
       <Button type="submit" className="w-full">
         Sign in
+      </Button>
+      <Button
+        type="button"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+        onClick={async () => {
+          await pb.collection("users").authWithPassword("demo@demo.com", "password");
+          navigate({ to: getRedirectAfterSignIn() });
+        }}
+      >
+        Sign in as Demo User
       </Button>
     </form>
   );
