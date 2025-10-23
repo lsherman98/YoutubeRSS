@@ -70,9 +70,13 @@ func checkUsageLimit(monthlyUsage *core.Record, fileSize int) (bool, int, int) {
 	return exceedsLimit, currentUsage, usageLimit
 }
 
-func getOrCreateDownload(app *pocketbase.PocketBase, ytdlpClient *ytdlp.Client, url string, videoId string, result *goutubedl.Result, retryCount int) (*core.Record, error) {
+func getOrCreateDownload(app *pocketbase.PocketBase, ytdlpClient *ytdlp.Client, url string, videoId string, result *goutubedl.Result, retryCount int, queueRecord *core.Record) (*core.Record, error) {
 	existingDownload, err := app.FindFirstRecordByData(collections.Downloads, "video_id", videoId)
 	if err == nil && existingDownload != nil {
+		queueRecord.Set("last_proxy", nil)
+		if err := app.Save(queueRecord); err != nil {
+			app.Logger().Warn("Downloader: failed to clear last_proxy for existing download", "error", err)
+		}
 		return existingDownload, nil
 	}
 

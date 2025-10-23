@@ -138,9 +138,11 @@ func (c *Client) GetInfo(url string) (*goutubedl.Result, error) {
 	opts := goutubedl.Options{
 		DebugLog: log.New(os.Stderr, "ytdlp: ", log.LstdFlags),
 	}
+	
 	if os.Getenv("DEV") != "true" {
 		opts.ProxyUrl = c.CurrentProxyURL
 	}
+
 	result, err := goutubedl.New(context.Background(), url, opts)
 	if err != nil {
 		return nil, err

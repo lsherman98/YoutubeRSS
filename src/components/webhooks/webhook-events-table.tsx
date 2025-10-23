@@ -53,7 +53,7 @@ export function WebhookEventsTable({ events }: WebhookEventsTableProps) {
   };
 
   return (
-    <div className="rounded-md border h-full">
+    <div className="relative h-[calc(47vh-6px)] overflow-auto">
       {events.length === 0 ? (
         <div className="h-full flex flex-col items-center justify-center py-12 text-center">
           <Webhook className="h-12 w-12 text-muted-foreground mb-4" />
@@ -63,8 +63,8 @@ export function WebhookEventsTable({ events }: WebhookEventsTableProps) {
           </p>
         </div>
       ) : (
-        <Table>
-          <TableHeader>
+        <Table className="w-full">
+          <TableHeader className="sticky top-0 bg-background z-10">
             <TableRow>
               <TableHead>Event</TableHead>
               <TableHead>Webhook Status</TableHead>

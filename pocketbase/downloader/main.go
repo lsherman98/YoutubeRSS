@@ -210,7 +210,7 @@ func processJob(app *pocketbase.PocketBase, job *core.Record, queueRecord *core.
 	}
 
 	retryCount := queueRecord.GetInt("retry_count")
-	download, err := getOrCreateDownload(app, ytdlpClient, url, result.Info.ID, result, retryCount)
+	download, err := getOrCreateDownload(app, ytdlpClient, url, result.Info.ID, result, retryCount, queueRecord)
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func processItem(app *pocketbase.PocketBase, itemRecord *core.Record, queueRecor
 	}
 
 	retryCount := queueRecord.GetInt("retry_count")
-	download, err := getOrCreateDownload(app, ytdlpClient, url, result.Info.ID, result, retryCount)
+	download, err := getOrCreateDownload(app, ytdlpClient, url, result.Info.ID, result, retryCount, queueRecord)
 	if err != nil {
 		return err
 	}
