@@ -137,7 +137,7 @@ func processQueue(app *pocketbase.PocketBase, numWorkers int64) {
 
 func handleJobFailure(app *pocketbase.PocketBase, record *core.Record, queueRecord *core.Record, jobErr error) {
 	retryCount := queueRecord.GetInt("retry_count")
-	maxRetries := 30
+	maxRetries := 36
 
 	queueRecord.Set("retry_count", retryCount+1)
 	queueRecord.Set("last_error", jobErr.Error())
