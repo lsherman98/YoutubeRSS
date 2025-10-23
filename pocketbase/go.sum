@@ -121,8 +121,6 @@ github.com/u2takey/ffmpeg-go v0.5.0 h1:r7d86XuL7uLWJ5mzSeQ03uvjfIhiJYvsRAJFCW4uk
 github.com/u2takey/ffmpeg-go v0.5.0/go.mod h1:ruZWkvC1FEiUNjmROowOAps3ZcWxEiOpFoHCvk97kGc=
 github.com/u2takey/go-utils v0.3.1 h1:TaQTgmEZZeDHQFYfd+AdUT1cT4QJgJn/XVPELhHw4ys=
 github.com/u2takey/go-utils v0.3.1/go.mod h1:6e+v5vEZ/6gu12w/DC2ixZdZtCrNokVxD0JUklcqdCs=
-github.com/wader/goutubedl v0.0.0-20251006110859-d258bc73a4cb h1:OJADErbrKdJEWu7H8Ygwu9h+tTQFsB2LdZwoxchHsfo=
-github.com/wader/goutubedl v0.0.0-20251006110859-d258bc73a4cb/go.mod h1:5KXd5tImdbmz4JoVhePtbIokCwAfEhUVVx3WLHmjYuw=
 github.com/wader/goutubedl v0.0.0-20251016104640-66d4f170be5b h1:/eipkxmecxk7OgBhIgm03X+RDxJg8HIOBHxMmkJhIwI=
 github.com/wader/goutubedl v0.0.0-20251016104640-66d4f170be5b/go.mod h1:5KXd5tImdbmz4JoVhePtbIokCwAfEhUVVx3WLHmjYuw=
 github.com/wader/osleaktest v0.0.0-20191111175233-f643b0fed071 h1:QkrG4Zr5OVFuC9aaMPmFI0ibfhBZlAgtzDYWfu7tqQk=

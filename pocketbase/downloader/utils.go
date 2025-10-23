@@ -2,7 +2,6 @@ package downloader
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/lsherman98/yt-rss/pocketbase/ytdlp"
@@ -83,18 +82,9 @@ func getOrCreateDownload(app *pocketbase.PocketBase, ytdlpClient *ytdlp.Client, 
 	}
 
 	download := core.NewRecord(downloads)
-	audio, path, err := ytdlpClient.Download(url, download, result, retryCount)
+	err = ytdlpClient.Download(url, download, result, retryCount)
 	if err != nil {
 		return nil, err
-	}
-	defer audio.Close()
-
-	if err := app.Save(download); err != nil {
-		return nil, err
-	}
-
-	if err := os.Remove(path); err != nil {
-		app.Logger().Warn("Downloader: failed to remove temp file", "error", err)
 	}
 
 	return download, nil
