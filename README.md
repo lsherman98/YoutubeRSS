@@ -2,17 +2,6 @@
 
 A full-stack application that converts YouTube channels and playlists into RSS feeds for podcast consumption. Built with React/TypeScript frontend and Go/PocketBase backend.
 
-## Features
-
-- Convert YouTube channels and playlists to RSS feeds
-- Subscription management with Stripe integration
-- User authentication and authorization
-- Background job processing for downloads
-- Proxy support for reliable YouTube access
-- Email notifications via Resend
-- Podcast feed generation
-- Admin dashboard
-
 ## Tech Stack
 
 **Frontend:**
@@ -119,25 +108,6 @@ Before running this project, make sure you have the following installed:
    - Frontend: `http://localhost:5173`
    - PocketBase Admin: `http://localhost:8090/_/`
 
-### Production Build
-
-1. **Build the frontend:**
-
-   ```bash
-   pnpm run build
-   ```
-
-2. **Build the PocketBase binary:**
-
-   ```bash
-   pnpm run pb:build
-   ```
-
-3. **Run the production server:**
-   ```bash
-   cd pocketbase
-   ./pocketbase serve
-   ```
 
 ## Project Structure
 
