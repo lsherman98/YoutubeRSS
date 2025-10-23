@@ -1,26 +1,26 @@
 # YouTube RSS
 
-A full-stack application that converts YouTube channels and playlists into RSS feeds for podcast consumption. Built with React/TypeScript frontend and Go/PocketBase backend.
+A full-stack application that converts YouTube videos and enables users to create private RSS feeds for podcast consumption. 
 
 ## Tech Stack
 
 **Frontend:**
 
 - React 19 with TypeScript
-- Vite for build tooling
-- TanStack Router for routing
-- TanStack Query for data fetching
-- Tailwind CSS for styling
+- Vite 
+- TanStack Router
+- TanStack Query
+- Tailwind CSS
 - Shadcn for UI components
 
 **Backend:**
 
 - Go
-- PocketBase for database and API
-- SQLite database
-- Stripe for payments
-- YouTube-dl for video processing
-- FFmpeg for audio conversion
+- PocketBase
+- SQLite
+- Stripe
+- yt-dlp
+- FFmpeg
 
 ## Prerequisites
 
@@ -37,8 +37,8 @@ Before running this project, make sure you have the following installed:
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/lsherman98/youtube-rss.git
-   cd youtube-rss
+   git clone https://github.com/lsherman98/YoutubeRSS
+   cd YoutubeRSS
    ```
 
 2. **Install frontend dependencies:**
@@ -54,35 +54,6 @@ Before running this project, make sure you have the following installed:
    go mod download
    cd ..
    ```
-
-4. **Set up environment variables:**
-
-   ```bash
-   cp .env.example .env
-   cp .env.example pocketbase/.env
-   ```
-
-   Edit both `.env` files with your actual configuration values.
-
-### Development Settings
-
-- `DEV`: Set to `true` for development mode
-
-### Proxy Configuration
-
-- `PROXY`: Primary proxy provider (evomi, oxylabs, iproyal, etc.)
-- Various proxy URLs for different providers
-
-### External Services
-
-- `RESEND_API_KEY`: For email notifications
-- `STRIPE_API_KEY`: Stripe payment processing
-- `STRIPE_WEBHOOK_SECRET`: Stripe webhook verification
-
-### Download Settings
-
-- `DOWNLOAD_MAX_WORKERS`: Number of concurrent download workers
-- `DOWNLOAD_QUEUE_SIZE`: Maximum queue size for downloads
 
 ## Running the Application
 
@@ -106,8 +77,7 @@ Before running this project, make sure you have the following installed:
 
 3. **Access the application:**
    - Frontend: `http://localhost:5173`
-   - PocketBase Admin: `http://localhost:8090/_/`
-
+   - Admin Dashboard: `http://localhost:8090/_/`
 
 ## Project Structure
 
