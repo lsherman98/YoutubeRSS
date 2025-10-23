@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -26,6 +27,9 @@ type Client struct {
 	EvomiProxyURLThree string
 	EvomiProxyURLFour  string
 	EvomiProxyURLFive  string
+	EvomiProxyURLSix   string
+	EvomiProxyURLSeven string
+	EvomiProxyURLEight string
 }
 
 func New(app core.App) *Client {
@@ -49,6 +53,9 @@ func New(app core.App) *Client {
 	evomiThreeURL := os.Getenv("EVOMI_PROXY_URL_THREE")
 	evomiFourURL := os.Getenv("EVOMI_PROXY_URL_FOUR")
 	evomiFiveURL := os.Getenv("EVOMI_PROXY_URL_FIVE")
+	evomiSixURL := os.Getenv("EVOMI_PROXY_URL_SIX")
+	evomiSevenURL := os.Getenv("EVOMI_PROXY_URL_SEVEN")
+	evomiEightURL := os.Getenv("EVOMI_PROXY_URL_EIGHT")
 
 	return &Client{
 		App:                app,
@@ -64,12 +71,15 @@ func New(app core.App) *Client {
 		EvomiProxyURLThree: evomiThreeURL,
 		EvomiProxyURLFour:  evomiFourURL,
 		EvomiProxyURLFive:  evomiFiveURL,
+		EvomiProxyURLSix:   evomiSixURL,
+		EvomiProxyURLSeven: evomiSevenURL,
+		EvomiProxyURLEight: evomiEightURL,
 	}
 }
 
 func (c *Client) SwitchProxy(retryCount int) {
 	switch {
-	case retryCount >= 12:
+	case retryCount >= 27:
 		if c.BackupProxyTwoURL == "" {
 			c.App.Logger().Warn("YTDLP: no backup proxy two configured")
 			return
@@ -77,7 +87,7 @@ func (c *Client) SwitchProxy(retryCount int) {
 		c.CurrentProxyURL = c.BackupProxyTwoURL
 		c.CurrentProxy = c.BackupProxyTwo
 		c.App.Logger().Info("YTDLP: Switched to backup proxy two", "proxy", c.CurrentProxyURL)
-	case retryCount >= 10:
+	case retryCount >= 24:
 		if c.BackupProxyOneURL == "" {
 			c.App.Logger().Warn("YTDLP: no backup proxy one configured")
 			return
@@ -85,17 +95,33 @@ func (c *Client) SwitchProxy(retryCount int) {
 		c.CurrentProxyURL = c.BackupProxyOneURL
 		c.CurrentProxy = c.BackupProxyOne
 		c.App.Logger().Info("YTDLP: Switched to backup proxy one", "proxy", c.CurrentProxyURL)
-	case retryCount >= 8:
+	case retryCount >= 21:
+		c.CurrentProxyURL = c.EvomiProxyURLEight
+		c.CurrentProxy = "evomi 8 (x3)"
+		c.App.Logger().Info("YTDLP: Switched to evomi proxy eight", "proxy", c.CurrentProxyURL)
+	case retryCount >= 18:
+		c.CurrentProxyURL = c.EvomiProxyURLSeven
+		c.CurrentProxy = "evomi 7 (x3)"
+		c.App.Logger().Info("YTDLP: Switched to evomi proxy seven", "proxy", c.CurrentProxyURL)
+	case retryCount >= 15:
+		c.CurrentProxyURL = c.EvomiProxyURLSix
+		c.CurrentProxy = "evomi 6 (x3)"
+		c.App.Logger().Info("YTDLP: Switched to evomi proxy six", "proxy", c.CurrentProxyURL)
+	case retryCount >= 12:
 		c.CurrentProxyURL = c.EvomiProxyURLFive
+		c.CurrentProxy = "evomi 5 (x3)"
 		c.App.Logger().Info("YTDLP: Switched to evomi proxy five", "proxy", c.CurrentProxyURL)
-	case retryCount >= 6:
+	case retryCount >= 9:
 		c.CurrentProxyURL = c.EvomiProxyURLFour
+		c.CurrentProxy = "evomi 4"
 		c.App.Logger().Info("YTDLP: Switched to evomi proxy four", "proxy", c.CurrentProxyURL)
-	case retryCount >= 4:
+	case retryCount >= 6:
 		c.CurrentProxyURL = c.EvomiProxyURLThree
+		c.CurrentProxy = "evomi 3"
 		c.App.Logger().Info("YTDLP: Switched to evomi proxy three", "proxy", c.CurrentProxyURL)
-	case retryCount >= 2:
+	case retryCount >= 3:
 		c.CurrentProxyURL = c.EvomiProxyURLTwo
+		c.CurrentProxy = "evomi 2"
 		c.App.Logger().Info("YTDLP: Switched to evomi proxy two", "proxy", c.CurrentProxyURL)
 	}
 }
@@ -159,15 +185,42 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 		f.Close()
 		return err
 	}
-	f.Close() 
+	f.Close()
+
+	tempFile, err := os.Open(path)
+	if err != nil {
+		c.App.Logger().Error("YTDLP: failed to open temporary file for type checking", "error", err)
+		return err
+	}
+
+	buffer := make([]byte, 512)
+	_, err = tempFile.Read(buffer)
+	if err != nil && err != io.EOF {
+		c.App.Logger().Error("YTDLP: failed to read temporary file for type checking", "error", err)
+		tempFile.Close()
+		return err
+	}
+	tempFile.Close()
+
+	contentType := http.DetectContentType(buffer)
 
 	convertedPath := directory + "/" + result.Info.ID + ".mp3"
-	err = ffmpeg.Input(path).
-		Output(convertedPath, ffmpeg.KwArgs{"vn": "", "acodec": "libmp3lame", "ab": "192k"}).
-		OverWriteOutput().ErrorToStdOut().Run()
-	if err != nil {
-		c.App.Logger().Error("YTDLP: ffmpeg conversion failed", "error", err)
-		return err
+
+	if contentType == "audio/mpeg" {
+		err = os.Rename(path, convertedPath)
+		if err != nil {
+			c.App.Logger().Error("YTDLP: failed to rename temporary file", "error", err)
+			return err
+		}
+	} else {
+		err = ffmpeg.Input(path).
+			Output(convertedPath, ffmpeg.KwArgs{"vn": "", "acodec": "libmp3lame", "ab": "192k"}).
+			OverWriteOutput().ErrorToStdOut().Run()
+		if err != nil {
+			os.Remove(path)
+			c.App.Logger().Error("YTDLP: ffmpeg conversion failed", "error", err)
+			return err
+		}
 	}
 
 	err = os.Remove(path)

@@ -136,13 +136,13 @@ func processQueue(app *pocketbase.PocketBase, numWorkers int64) {
 }
 
 func handleJobFailure(app *pocketbase.PocketBase, record *core.Record, queueRecord *core.Record, jobErr error) {
-	retryCount := queueRecord.GetInt("retry_count") + 1
-	maxRetries := 14
+	retryCount := queueRecord.GetInt("retry_count")
+	maxRetries := 30
 
-	queueRecord.Set("retry_count", retryCount)
+	queueRecord.Set("retry_count", retryCount+1)
 	queueRecord.Set("last_error", jobErr.Error())
 
-	if retryCount >= maxRetries {
+	if retryCount+1 >= maxRetries {
 		app.Logger().Error("Downloader: job failed after max retries", "job_id", queueRecord.Id)
 
 		queueRecord.Set("status", "FAILED")
@@ -157,7 +157,7 @@ func handleJobFailure(app *pocketbase.PocketBase, record *core.Record, queueReco
 			app.Logger().Error("Downloader: failed to update record status to ERROR", "record_id", record.Id, "error", err)
 		}
 	} else {
-		app.Logger().Info("Job failed, will retry", "job_id", queueRecord.Id, "retry_count", retryCount, "error", jobErr.Error())
+		app.Logger().Info("Job failed, will retry", "job_id", queueRecord.Id, "retry_count", retryCount+1, "error", jobErr.Error())
 
 		queueRecord.Set("status", "PENDING")
 		queueRecord.Set("worker_id", nil)
