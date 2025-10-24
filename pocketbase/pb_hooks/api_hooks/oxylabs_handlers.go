@@ -8,6 +8,7 @@ import (
 
 	"github.com/lsherman98/yt-rss/pocketbase/collections"
 	"github.com/lsherman98/yt-rss/pocketbase/oxylabs"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/filesystem"
 	"github.com/pocketbase/pocketbase/tools/routine"
@@ -112,6 +113,18 @@ func handleDone(app core.App, oxylabClient *oxylabs.Client, payload WebhookPaylo
 		if err := app.Save(record); err != nil {
 			app.Logger().Error("Oxylabs Webhook: failed to save record with downloaded file", "collection", collection, "record_id", recordId, "error", err)
 			return
+		}
+
+		usageRecords, err := app.FindRecordsByFilter(collections.MonthlyUsage, "user = {:user}", "-created", 1, 0, dbx.Params{"user": record.GetString("user")})
+		if err != nil || len(usageRecords) == 0 {
+			app.Logger().Error("Oxylabs Webhook: failed to find monthly usage record", "user", record.GetString("user"), "error", err)
+			return
+		}
+		usage := usageRecords[0]
+
+		usage.Set("usage", usage.GetInt("usage")+int(file.Size))
+		if err := app.Save(usage); err != nil {
+			app.Logger().Error("Downloader: failed to update monthly usage", "error", err)
 		}
 
 		err = os.Remove(path)

@@ -215,18 +215,20 @@ func processJob(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, job *c
 		return err
 	}
 
-	resp, err := oxylabClient.Start(result.Info.ID, queue.Id)
-	if err != nil {
-		app.Logger().Error("Downloader: failed to start Oxylabs job", "job_id", job.Id, "error", err)
-	} else {
-		queue.Set("oxylab_job_id", resp.ID)
-		if err := app.Save(queue); err != nil {
-			return err
+	retryCount := queue.GetInt("retry_count")
+	if retryCount == 0 {
+		resp, err := oxylabClient.Start(result.Info.ID, queue.Id)
+		if err != nil {
+			app.Logger().Error("Downloader: failed to start Oxylabs job", "job_id", job.Id, "error", err)
+		} else {
+			queue.Set("oxylab_job_id", resp.ID)
+			if err := app.Save(queue); err != nil {
+				return err
+			}
+			return nil
 		}
-		return nil
 	}
 
-	retryCount := queue.GetInt("retry_count")
 	file, path, err := ytdlpClient.Download(url, result, retryCount)
 	if err != nil {
 		app.Logger().Error("Downloader: ytdlp download failed", "job_id", job.Id, "error", err)
