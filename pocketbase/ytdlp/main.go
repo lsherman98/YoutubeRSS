@@ -169,20 +169,14 @@ func (c *Client) GetInfo(url string) (*goutubedl.Result, error) {
 	return &result, nil
 }
 
-func (c *Client) Download(url string, record *core.Record, result *goutubedl.Result, retryCount int) error {
-	record.Set("title", result.Info.Title)
-	record.Set("duration", result.Info.Duration)
-	record.Set("channel", result.Info.Channel)
-	record.Set("description", result.Info.Description)
-	record.Set("video_id", result.Info.ID)
-
+func (c *Client) Download(url string, result *goutubedl.Result, retryCount int) (*filesystem.File, string, error) {
 	download, err := result.DownloadWithOptions(context.Background(), goutubedl.DownloadOptions{
 		DownloadAudioOnly: true,
 		AudioFormats:      "mp3",
 	})
 	if err != nil {
 		c.App.Logger().Error("YTDLP: download failed", "error", err)
-		return err
+		return nil, "", err
 	}
 	defer download.Close()
 
@@ -190,27 +184,27 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
 		err = os.Mkdir(directory, 0755)
 		if err != nil {
-			return err
+			return nil, "", err
 		}
 	}
 
 	path := directory + "/" + result.Info.ID + "_temp.mp3"
 	f, err := os.Create(path)
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 
 	_, err = io.Copy(f, download)
 	if err != nil {
 		f.Close()
-		return err
+		return nil, "", err
 	}
 	f.Close()
 
 	tempFile, err := os.Open(path)
 	if err != nil {
 		c.App.Logger().Error("YTDLP: failed to open temporary file for type checking", "error", err)
-		return err
+		return nil, "", err
 	}
 
 	buffer := make([]byte, 512)
@@ -218,7 +212,7 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 	if err != nil && err != io.EOF {
 		c.App.Logger().Error("YTDLP: failed to read temporary file for type checking", "error", err)
 		tempFile.Close()
-		return err
+		return nil, "", err
 	}
 	tempFile.Close()
 
@@ -230,7 +224,7 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 		err = os.Rename(path, convertedPath)
 		if err != nil {
 			c.App.Logger().Error("YTDLP: failed to rename temporary file", "error", err)
-			return err
+			return nil, "", err
 		}
 	} else {
 		err = ffmpeg.Input(path).
@@ -239,7 +233,7 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 		if err != nil {
 			os.Remove(path)
 			c.App.Logger().Error("YTDLP: ffmpeg conversion failed", "error", err)
-			return err
+			return nil, "", err
 		}
 	}
 
@@ -250,21 +244,10 @@ func (c *Client) Download(url string, record *core.Record, result *goutubedl.Res
 
 	audio, err := filesystem.NewFileFromPath(convertedPath)
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 
-	record.Set("file", audio)
-	record.Set("size", audio.Size)
-	if err := c.App.Save(record); err != nil {
-		return err
-	}
-
-	err = os.Remove(convertedPath)
-	if err != nil {
-		c.App.Logger().Error("YTDLP: failed to delete converted file", "error", err)
-	}
-
-	return nil
+	return audio, convertedPath, nil
 }
 
 func getProxyURL(proxyKey string) string {

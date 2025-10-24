@@ -12,35 +12,37 @@ import (
 )
 
 func resetHangingJobs(app *pocketbase.PocketBase) {
-	hangingQueueJobs, err := app.FindRecordsByFilter(collections.Queue, "status={:status}", "", 0, 0, dbx.Params{"status": "PROCESSING"})
+	hangingQueues, err := app.FindRecordsByFilter(collections.Queue, "status={:status}", "", 0, 0, dbx.Params{"status": "PROCESSING"})
 	if err != nil {
 		app.Logger().Error("Downloader: failed to query for hanging jobs", "error", err)
 		return
 	}
 
-	for _, qj := range hangingQueueJobs {
-		qj.Set("status", "PENDING")
-		qj.Set("worker_id", nil)
-		if err := app.Save(qj); err != nil {
-			app.Logger().Error("Downloader: failed to reset hanging job", "job_id", qj.Id, "error", err)
+	for _, q := range hangingQueues {
+		q.Set("status", "PENDING")
+		q.Set("worker_id", nil)
+		if err := app.Save(q); err != nil {
+			app.Logger().Error("Downloader: failed to reset hanging job", "job_id", q.Id, "error", err)
 		}
 	}
 }
 
-func setupYtdlpClient(app *pocketbase.PocketBase, queueRecord *core.Record) (*ytdlp.Client, error) {
+func setupYtdlpClient(app *pocketbase.PocketBase, queue *core.Record) (*ytdlp.Client, error) {
 	ytdlpClient := ytdlp.New(app)
 	if ytdlpClient == nil {
 		return nil, fmt.Errorf("failed to initialize ytdlp client")
 	}
 
-	retryCount := queueRecord.GetInt("retry_count")
+	retryCount := queue.GetInt("retry_count")
 	if retryCount > 0 {
 		ytdlpClient.SwitchProxy(retryCount)
+	} else {
+		return ytdlpClient, nil
 	}
 
 	currentProxy := ytdlpClient.GetCurrentProxyKey()
-	queueRecord.Set("last_proxy", currentProxy)
-	if err := app.Save(queueRecord); err != nil {
+	queue.Set("last_proxy", currentProxy)
+	if err := app.Save(queue); err != nil {
 		app.Logger().Warn("Downloader: failed to update queue record with proxy info", "error", err)
 	}
 
@@ -63,35 +65,38 @@ func calculateFileSize(result *goutubedl.Result) int {
 	return int(float64(length) * 25000)
 }
 
-func checkUsageLimit(monthlyUsage *core.Record, fileSize int) (bool, int, int) {
+func checkUsageLimit(app *pocketbase.PocketBase, monthlyUsage *core.Record, fileSize int, record *core.Record) bool {
 	usageLimit := monthlyUsage.GetInt("limit")
 	currentUsage := monthlyUsage.GetInt("usage")
 	exceedsLimit := currentUsage > usageLimit || (currentUsage+fileSize) > usageLimit
-	return exceedsLimit, currentUsage, usageLimit
+	if exceedsLimit {
+		record.Set("status", "ERROR")
+		record.Set("error", "Failed to add item to podcast: Monthly usage limit exceeded")
+		if err := app.Save(record); err != nil {
+			app.Logger().Error("Downloader: failed to update item record status to ERROR", "error", err)
+		}
+		return true
+	}
+	return false
 }
 
-func getOrCreateDownload(app *pocketbase.PocketBase, ytdlpClient *ytdlp.Client, url string, videoId string, result *goutubedl.Result, retryCount int, queueRecord *core.Record) (*core.Record, error) {
+func checkDownloadExists(app *pocketbase.PocketBase, videoId string, record, queue *core.Record) bool {
 	existingDownload, err := app.FindFirstRecordByData(collections.Downloads, "video_id", videoId)
-	if err == nil && existingDownload != nil {
-		queueRecord.Set("last_proxy", nil)
-		if err := app.Save(queueRecord); err != nil {
-			app.Logger().Warn("Downloader: failed to clear last_proxy for existing download", "error", err)
+	if err == nil && existingDownload != nil && existingDownload.Get("file") != nil {
+		record.Set("download", existingDownload.Id)
+		record.Set("status", "SUCCESS")
+		if err := app.Save(record); err != nil {
+			return false
 		}
-		return existingDownload, nil
-	}
 
-	downloads, err := app.FindCollectionByNameOrId(collections.Downloads)
-	if err != nil {
-		return nil, err
-	}
+		queue.Set("status", "COMPLETED")
+		if err := app.Save(queue); err != nil {
+			app.Logger().Error("Downloader: failed to update job status to COMPLETED", "job_id", queue.Id, "error", err)
+		}
 
-	download := core.NewRecord(downloads)
-	err = ytdlpClient.Download(url, download, result, retryCount)
-	if err != nil {
-		return nil, err
+		return true
 	}
-
-	return download, nil
+	return false
 }
 
 func updateMonthlyUsage(app *pocketbase.PocketBase, monthlyUsage *core.Record, currentUsage, fileSize int) {
@@ -99,4 +104,23 @@ func updateMonthlyUsage(app *pocketbase.PocketBase, monthlyUsage *core.Record, c
 	if err := app.Save(monthlyUsage); err != nil {
 		app.Logger().Error("Downloader: failed to update monthly usage", "error", err)
 	}
+}
+
+func createDownloadRecord(app *pocketbase.PocketBase, result *goutubedl.Result) (*core.Record, error) {
+	downloads, err := app.FindCollectionByNameOrId(collections.Downloads)
+	if err != nil {
+		return nil, err
+	}
+
+	download := core.NewRecord(downloads)
+	download.Set("title", result.Info.Title)
+	download.Set("duration", result.Info.Duration)
+	download.Set("channel", result.Info.Channel)
+	download.Set("description", result.Info.Description)
+	download.Set("video_id", result.Info.ID)
+	if err := app.Save(download); err != nil {
+		return nil, err
+	}
+
+	return download, nil
 }

@@ -28,6 +28,7 @@ func Init(app *pocketbase.PocketBase) error {
 		v1.GET("/get-usage", getUsageHandler).BindFunc(requireValidAPIKey)
 		v1.POST("/podcasts/add-url", addItemHandler).BindFunc(requireValidAPIKey, checkUsageLimits)
 
+		v1.POST("/oxylabs/webhook/{queueId}", oxyLabsWebhookHandler)
 		return se.Next()
 	})
 

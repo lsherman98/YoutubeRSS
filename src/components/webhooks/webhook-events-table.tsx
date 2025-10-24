@@ -53,7 +53,7 @@ export function WebhookEventsTable({ events }: WebhookEventsTableProps) {
   };
 
   return (
-    <div className="relative h-[calc(47vh-6px)] overflow-auto">
+    <div className="relative h-full max-h-[calc(47vh-6px)] overflow-auto">
       {events.length === 0 ? (
         <div className="h-full flex flex-col items-center justify-center py-12 text-center">
           <Webhook className="h-12 w-12 text-muted-foreground mb-4" />
