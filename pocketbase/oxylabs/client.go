@@ -131,9 +131,19 @@ func (c *Client) DownloadFile(videoID, jobID string) (string, error) {
 
 	objectName := fmt.Sprintf("%s_%s.m4a", videoID, jobID)
 
-	rc, err := c.gcpClient.Bucket(c.storageBucket).Object(objectName).NewReader(ctx)
+	var rc *storage.Reader
+	var err error
+	for attempt := range 3 {
+		rc, err = c.gcpClient.Bucket(c.storageBucket).Object(objectName).NewReader(ctx)
+		if err == nil {
+			break
+		}
+		if attempt < 2 {
+			time.Sleep(5 * time.Second * time.Duration(attempt))
+		}
+	}
 	if err != nil {
-		return "", fmt.Errorf("Object(%q).NewReader: %w", objectName, err)
+		return "", fmt.Errorf("Object(%q).NewReader after retries: %w", objectName, err)
 	}
 	defer rc.Close()
 
@@ -142,28 +152,28 @@ func (c *Client) DownloadFile(videoID, jobID string) (string, error) {
 		return "", fmt.Errorf("ioutil.ReadAll: %w", err)
 	}
 
-	destPath := filepath.Join("pb_data", "storage", fmt.Sprintf("%s_%s.m4a", videoID, jobID))
+	destPath := filepath.Join("pb_data", "output", fmt.Sprintf("%s_%s.m4a", videoID, jobID))
 	if err := os.WriteFile(destPath, data, 0644); err != nil {
 		return "", fmt.Errorf("os.WriteFile: %w", err)
 	}
 
-	deleteCtx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
+	// deleteCtx, cancel := context.WithTimeout(ctx, time.Second*10)
+	// defer cancel()
 
-	o := c.gcpClient.Bucket(c.storageBucket).Object(objectName)
+	// o := c.gcpClient.Bucket(c.storageBucket).Object(objectName)
 
 	// Optional: set a generation-match precondition to avoid potential race
 	// conditions and data corruptions. The request to delete the file is aborted
 	// if the object's generation number does not match your precondition.
-	attrs, err := o.Attrs(deleteCtx)
-	if err != nil {
-		return "", fmt.Errorf("object.Attrs: %w", err)
-	}
-	o = o.If(storage.Conditions{GenerationMatch: attrs.Generation})
+	// attrs, err := o.Attrs(deleteCtx)
+	// if err != nil {
+	// 	return "", fmt.Errorf("object.Attrs: %w", err)
+	// }
+	// o = o.If(storage.Conditions{GenerationMatch: attrs.Generation})
 
-	if err := o.Delete(deleteCtx); err != nil {
-		return "", fmt.Errorf("Object(%q).Delete: %w", objectName, err)
-	}
+	// if err := o.Delete(deleteCtx); err != nil {
+	// 	return "", fmt.Errorf("Object(%q).Delete: %w", objectName, err)
+	// }
 
 	return destPath, nil
 }
