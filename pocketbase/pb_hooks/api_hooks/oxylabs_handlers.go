@@ -15,7 +15,7 @@ import (
 
 type ContextItem struct {
 	Key   string `json:"key"`
-	Value string `json:"value"`
+	Value any    `json:"value"`
 }
 
 type WebhookPayload struct {
@@ -72,7 +72,6 @@ func oxyLabsWebhookHandler(e *core.RequestEvent) error {
 
 func handlePending(app core.App, queue *core.Record) {
 	app.Logger().Info("Oxylabs Webhook: Job pending", "queue_id", queue.Id)
-
 }
 
 func handleDone(app core.App, oxylabClient *oxylabs.Client, payload WebhookPayload, queue *core.Record) {
@@ -80,26 +79,25 @@ func handleDone(app core.App, oxylabClient *oxylabs.Client, payload WebhookPaylo
 	recordId := queue.GetString("record_id")
 	record, err := app.FindRecordById(collection, recordId)
 	if err != nil {
-		app.Logger().Error("Oxylabs Webhook: failed to find record for faulted job", "collection", collection, "record_id", recordId, "error", err)
+		app.Logger().Error("Oxylabs Webhook: failed to find record for done job", "collection", collection, "record_id", recordId, "error", err)
 		return
 	}
 
 	routine.FireAndForget(func() {
 		path, err := oxylabClient.DownloadFile(payload.Query, payload.ID)
 		if err != nil {
-			app.Logger().Error("Oxylabs Webhook: failed to download file", "error", err)
+			app.Logger().Error("Oxylabs Webhook: failed to download file", "queue_id", queue.Id, "error", err)
 			return
 		}
 
 		file, err := filesystem.NewFileFromPath(path)
 		if err != nil {
-			app.Logger().Error("Oxylabs Webhook: failed to create file from path", "error", err)
 			return
 		}
 
 		download, err := app.FindFirstRecordByData(collections.Downloads, "video_id", payload.Query)
 		if err != nil {
-			app.Logger().Error("Oxylabs Webhook: failed to find download record", "video_id", payload.Query)
+			app.Logger().Error("Oxylabs Webhook: failed to find download record", "queue_id", queue.Id, "video_id", payload.Query, "error", err)
 			return
 		}
 
@@ -118,7 +116,6 @@ func handleDone(app core.App, oxylabClient *oxylabs.Client, payload WebhookPaylo
 
 		err = os.Remove(path)
 		if err != nil {
-			app.Logger().Error("YTDLP: failed to delete converted file", "error", err)
 		}
 
 		queue.Set("status", "COMPLETED")

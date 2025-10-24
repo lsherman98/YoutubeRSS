@@ -40,6 +40,10 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("OXYLABS_USERNAME and OXYLABS_PASSWORD must be set")
 	}
 
+	if os.Getenv("DEV") == "true" {
+		callbackURL = "https://ytrss-http-tunnel.ngrok.app/api/v1/oxylabs/webhook"
+	}
+
 	ctx := context.Background()
 	storageClient, err := storage.NewClient(ctx)
 	if err != nil {
@@ -125,7 +129,7 @@ func (c *Client) Start(videoID string, jobId string) (*JobCreateResponse, error)
 func (c *Client) DownloadFile(videoID, jobID string) (string, error) {
 	ctx := context.Background()
 
-	objectName := fmt.Sprintf("oxylabs/%s_%s.m4a", videoID, jobID)
+	objectName := fmt.Sprintf("%s_%s.m4a", videoID, jobID)
 
 	rc, err := c.gcpClient.Bucket(c.storageBucket).Object(objectName).NewReader(ctx)
 	if err != nil {

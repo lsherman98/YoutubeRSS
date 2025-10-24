@@ -175,7 +175,6 @@ func (c *Client) Download(url string, result *goutubedl.Result, retryCount int) 
 		AudioFormats:      "mp3",
 	})
 	if err != nil {
-		c.App.Logger().Error("YTDLP: download failed", "error", err)
 		return nil, "", err
 	}
 	defer download.Close()

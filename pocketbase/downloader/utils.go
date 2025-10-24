@@ -75,14 +75,14 @@ func checkUsageLimit(app *pocketbase.PocketBase, monthlyUsage *core.Record, file
 		if err := app.Save(record); err != nil {
 			app.Logger().Error("Downloader: failed to update item record status to ERROR", "error", err)
 		}
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
 func checkDownloadExists(app *pocketbase.PocketBase, videoId string, record, queue *core.Record) bool {
 	existingDownload, err := app.FindFirstRecordByData(collections.Downloads, "video_id", videoId)
-	if err == nil && existingDownload != nil && existingDownload.Get("file") != nil {
+	if err == nil && existingDownload != nil && existingDownload.Get("file") != "" {
 		record.Set("download", existingDownload.Id)
 		record.Set("status", "SUCCESS")
 		if err := app.Save(record); err != nil {

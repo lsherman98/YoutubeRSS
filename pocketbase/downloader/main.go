@@ -65,7 +65,7 @@ func AddJob(app core.App, record *core.Record, collection string) error {
 }
 
 func processQueue(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, numWorkers int64) {
-	processingCount, err := app.CountRecords(collections.Queue, dbx.HashExp{"status": "PROCESSING", "oxylab_job_id": nil})
+	processingCount, err := app.CountRecords(collections.Queue, dbx.HashExp{"status": "PROCESSING", "oxylab_job_id": ""})
 	if err != nil {
 		app.Logger().Error("Downloader: failed to get processing job count", "error", err)
 		return
@@ -92,7 +92,6 @@ func processQueue(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, numW
 			}
 
 			if queue.GetString("status") != "PENDING" {
-				app.Logger().Error("Downloader: job already claimed by another worker", "queue_id", queue.Id)
 				return
 			}
 
@@ -173,6 +172,7 @@ func processJob(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, job *c
 
 	monthlyUsage, err := getMonthlyUsage(app, user)
 	if err != nil {
+		app.Logger().Error("Downloader: failed to get monthly usage", "job_id", job.Id, "error", err)
 		return err
 	}
 
@@ -188,6 +188,7 @@ func processJob(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, job *c
 
 	result, err := ytdlpClient.GetInfo(url)
 	if err != nil {
+		app.Logger().Error("Downloader: failed to get video info", "job_id", job.Id, "error", err)
 		return err
 	}
 
@@ -216,7 +217,7 @@ func processJob(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, job *c
 
 	resp, err := oxylabClient.Start(result.Info.ID, queue.Id)
 	if err != nil {
-		app.Logger().Error("Downloader: failed to start Oxylabs job", "error", err)
+		app.Logger().Error("Downloader: failed to start Oxylabs job", "job_id", job.Id, "error", err)
 	} else {
 		queue.Set("oxylab_job_id", resp.ID)
 		if err := app.Save(queue); err != nil {
@@ -224,11 +225,11 @@ func processJob(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, job *c
 		}
 		return nil
 	}
-	
 
 	retryCount := queue.GetInt("retry_count")
 	file, path, err := ytdlpClient.Download(url, result, retryCount)
 	if err != nil {
+		app.Logger().Error("Downloader: ytdlp download failed", "job_id", job.Id, "error", err)
 		return err
 	}
 
@@ -240,7 +241,7 @@ func processJob(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, job *c
 
 	err = os.Remove(path)
 	if err != nil {
-		app.Logger().Error("Downloader: failed to delete converted file", "error", err)
+		app.Logger().Error("Downloader: failed to delete converted file", "job_id", job.Id, "error", err)
 	}
 
 	job.Set("download", download.Id)
