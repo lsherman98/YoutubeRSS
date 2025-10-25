@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { formatFileSize } from "@/lib/utils";
 
 const SUPPORTED_AUDIO_TYPES = ["audio/mp3", "audio/wav", "audio/mpeg", "audio/aac"];
-const SUPPORTED_EXTENSIONS = [".mp3", ".wav", ".aac"];
+const SUPPORTED_EXTENSIONS = [".mp3", ".wav", ".aac", ".m4a"];
 
 type AudioFileItem = { file: File; title: string };
 
@@ -130,7 +130,7 @@ export function AudioFileInput({ podcastId, setOpen, audioItems, setAudioItems }
               onChange={handleFileInput}
               className="hidden"
             />
-            <p className="text-sm text-muted-foreground">Supports .mp3, .wav, and .aac files (max 50 files)</p>
+            <p className="text-sm text-muted-foreground">Supports .mp3, .wav, .m4a, and .aac files (max 50 files)</p>
           </div>
         )}
 
