@@ -80,13 +80,13 @@ func checkUsageLimit(app *pocketbase.PocketBase, monthlyUsage *core.Record, file
 	return true
 }
 
-func checkDownloadExists(app *pocketbase.PocketBase, videoId string, record, queue *core.Record) bool {
+func checkDownloadExists(app *pocketbase.PocketBase, videoId string, record, queue *core.Record) (bool, *core.Record) {
 	existingDownload, err := app.FindFirstRecordByData(collections.Downloads, "video_id", videoId)
 	if err == nil && existingDownload != nil && existingDownload.Get("file") != "" {
 		record.Set("download", existingDownload.Id)
 		record.Set("status", "SUCCESS")
 		if err := app.Save(record); err != nil {
-			return false
+			return false, nil
 		}
 
 		queue.Set("status", "COMPLETED")
@@ -94,9 +94,9 @@ func checkDownloadExists(app *pocketbase.PocketBase, videoId string, record, que
 			app.Logger().Error("Downloader: failed to update job status to COMPLETED", "job_id", queue.Id, "error", err)
 		}
 
-		return true
+		return true, existingDownload
 	}
-	return false
+	return false, nil
 }
 
 func updateMonthlyUsage(app *pocketbase.PocketBase, monthlyUsage *core.Record, currentUsage, fileSize int) {

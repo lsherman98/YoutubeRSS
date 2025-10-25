@@ -204,7 +204,7 @@ func processJob(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, job *c
 		return err
 	}
 
-	ok = checkDownloadExists(app, result.Info.ID, job, queue)
+	ok, _ = checkDownloadExists(app, result.Info.ID, job, queue)
 	if ok {
 		updateMonthlyUsage(app, monthlyUsage, monthlyUsage.GetInt("usage"), fileSize)
 		return nil
@@ -313,13 +313,30 @@ func processItem(app *pocketbase.PocketBase, oxylabClient *oxylabs.Client, item 
 		return nil
 	}
 
-	ok = checkDownloadExists(app, result.Info.ID, item, queue)
+	ok, download := checkDownloadExists(app, result.Info.ID, item, queue)
 	if ok {
 		updateMonthlyUsage(app, monthlyUsage, monthlyUsage.GetInt("usage"), fileSize)
+
+		audioURL := fileClient.GetFileURL(download, "file")
+		title := download.GetString("title")
+		description := download.GetString("description")
+		duration := download.GetFloat("duration")
+
+		if description == "" {
+			description = "No description available."
+		}
+
+		now := time.Now()
+		rss_utils.AddItemToPodcast(&p, title, audioURL, description, download.Id, audioURL, int64(duration), &now)
+
+		if err := rss_utils.UpdateXMLFile(app, fileClient, p, podcast); err != nil {
+			return err
+		}
+
 		return nil
 	}
 
-	download, err := createDownloadRecord(app, result)
+	download, err = createDownloadRecord(app, result)
 	if err != nil {
 		return err
 	}
