@@ -174,9 +174,9 @@ export type DownloadsRecord = {
 	created?: IsoDateString
 	description?: string
 	duration?: number
-	file: string
+	file?: string
 	id: string
-	size: number
+	size?: number
 	title: string
 	updated?: IsoDateString
 	video_id: string
@@ -283,6 +283,7 @@ export type QueueRecord = {
 	id: string
 	last_error?: string
 	last_proxy?: string
+	oxylab_job_id?: string
 	record_id: string
 	retry_count?: number
 	status: QueueStatusOptions

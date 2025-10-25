@@ -192,13 +192,12 @@ func (c *Client) Download(url string, result *goutubedl.Result, retryCount int) 
 	if err != nil {
 		return nil, "", err
 	}
+	defer f.Close()
 
 	_, err = io.Copy(f, download)
 	if err != nil {
-		f.Close()
 		return nil, "", err
 	}
-	f.Close()
 
 	tempFile, err := os.Open(path)
 	if err != nil {
